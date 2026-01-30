@@ -142,84 +142,164 @@ $(document).ready(function () {
       : Math.sign(num) * Math.abs(num);
   }
 
-  // Zoom in/out of the canvas
-  canvas.on('mouse:wheel', function (opt) {
-    var delta = opt.e.deltaY;
-    var zoom = canvas.getZoom();
-    zoom *= 0.999 ** delta;
+  function updateZoomLabel(zoom) {
     $('#zoom-level span').html(
       kFormatter((zoom * 100).toFixed(0)) + '%'
     );
+  }
+
+  var canvasPointers = new Map();
+  var canvasPinch = null;
+  var panPointerId = null;
+
+  function onCanvasWheel(e) {
+    var delta = e.deltaY;
+    var zoom = canvas.getZoom();
+    zoom *= 0.999 ** delta;
     if (zoom > 20) zoom = 20;
     if (zoom < 0.01) zoom = 0.01;
-    canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-    opt.e.preventDefault();
-    opt.e.stopPropagation();
-  });
+    canvas.zoomToPoint({ x: e.offsetX, y: e.offsetY }, zoom);
+    updateZoomLabel(zoom);
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
-  // Start panning if space is down or hand tool is enabled
-  canvas.on('mouse:down', function (opt) {
-    var e = opt.e;
-    if (spaceDown || handtool) {
-      this.isDragging = true;
-      this.selection = false;
-      this.lastPosX = e.clientX;
-      this.lastPosY = e.clientY;
-    }
-    if (opt.target) {
-      opt.target.hasControls = true;
-      wip = false;
-    }
-  });
+  function getCanvasPointerPositions() {
+    return Array.from(canvasPointers.values());
+  }
 
-  // Pan while dragging mouse
-  canvas.on('mouse:move', function (opt) {
-    var pointer = canvas.getPointer(opt.e);
+  function getDistance(a, b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function getMidpoint(a, b) {
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  function handleCanvasPointerDown(e) {
+    canvas.upperCanvasEl.setPointerCapture(e.pointerId);
+    canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (canvasPointers.size === 2) {
+      var pts = getCanvasPointerPositions();
+      canvasPinch = {
+        distance: getDistance(pts[0], pts[1]),
+        zoom: canvas.getZoom(),
+      };
+      canvas.selection = false;
+      canvas.isDragging = false;
+      panPointerId = null;
+      e.preventDefault();
+    } else if (spaceDown || handtool) {
+      panPointerId = e.pointerId;
+      canvas.isDragging = true;
+      canvas.selection = false;
+      canvas.lastPosX = e.clientX;
+      canvas.lastPosY = e.clientY;
+      e.preventDefault();
+    }
+  }
+
+  function handleCanvasPointerMove(e) {
+    if (!canvasPointers.has(e.pointerId)) {
+      return;
+    }
+    canvasPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    var pointer = canvas.getPointer(e);
     canvasx = pointer.x;
     canvasy = pointer.y;
-    if (this.isDragging) {
-      var e = opt.e;
-      var vpt = this.viewportTransform;
-      vpt[4] += e.clientX - this.lastPosX;
-      vpt[5] += e.clientY - this.lastPosY;
-      this.requestRenderAll();
-      this.lastPosX = e.clientX;
-      this.lastPosY = e.clientY;
+    if (canvasPointers.size === 2 && canvasPinch) {
+      var pts = getCanvasPointerPositions();
+      var distance = getDistance(pts[0], pts[1]);
+      var zoom = canvasPinch.zoom * (distance / canvasPinch.distance);
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      var mid = getMidpoint(pts[0], pts[1]);
+      canvas.zoomToPoint(
+        { x: mid.x - canvas.upperCanvasEl.getBoundingClientRect().left, y: mid.y - canvas.upperCanvasEl.getBoundingClientRect().top },
+        zoom
+      );
+      updateZoomLabel(zoom);
+      e.preventDefault();
+    } else if (canvas.isDragging && panPointerId === e.pointerId) {
+      var vpt = canvas.viewportTransform;
+      vpt[4] += e.clientX - canvas.lastPosX;
+      vpt[5] += e.clientY - canvas.lastPosY;
+      canvas.requestRenderAll();
+      canvas.lastPosX = e.clientX;
+      canvas.lastPosY = e.clientY;
+      e.preventDefault();
     }
-  });
 
-  // Stop panning
-  canvas.on('mouse:up', function (opt) {
-    this.setViewportTransform(this.viewportTransform);
-    this.isDragging = false;
-    this.selection = true;
-    line_h.opacity = 0;
-    line_v.opacity = 0;
-  });
-
-  // Detect mouse over canvas (for dragging objects from the library)
-  canvas.on('mouse:move', function (e) {
     overCanvas = true;
+    var target = canvas.findTarget(e);
     if (
-      e.target &&
+      target &&
       !canvas.getActiveObject() &&
       draggingPanel &&
-      e.target.type == 'image'
+      target.type == 'image'
     ) {
       wip = true;
-      e.target.hasControls = false;
-      canvas.setActiveObject(e.target);
+      target.hasControls = false;
+      canvas.setActiveObject(target);
     }
-  });
-  canvas.on('mouse:out', function (e) {
+  }
+
+  function handleCanvasPointerUp(e) {
+    if (canvas.upperCanvasEl.hasPointerCapture(e.pointerId)) {
+      canvas.upperCanvasEl.releasePointerCapture(e.pointerId);
+    }
+    canvasPointers.delete(e.pointerId);
+    if (canvasPointers.size < 2) {
+      canvasPinch = null;
+    }
+    if (panPointerId === e.pointerId) {
+      canvas.setViewportTransform(canvas.viewportTransform);
+      canvas.isDragging = false;
+      canvas.selection = true;
+      panPointerId = null;
+      line_h.opacity = 0;
+      line_v.opacity = 0;
+    }
+  }
+
+  function handleCanvasPointerLeave() {
     overCanvas = false;
     if (wip) {
-      e.target.hasControls = true;
+      var target = canvas.getActiveObject();
+      if (target) {
+        target.hasControls = true;
+      }
       canvas.discardActiveObject();
       wip = false;
       canvas.renderAll();
     }
+  }
+
+  canvas.upperCanvasEl.addEventListener('wheel', onCanvasWheel, {
+    passive: false,
   });
+  canvas.upperCanvasEl.addEventListener(
+    'pointerdown',
+    handleCanvasPointerDown
+  );
+  canvas.upperCanvasEl.addEventListener(
+    'pointermove',
+    handleCanvasPointerMove
+  );
+  canvas.upperCanvasEl.addEventListener(
+    'pointerup',
+    handleCanvasPointerUp
+  );
+  canvas.upperCanvasEl.addEventListener(
+    'pointercancel',
+    handleCanvasPointerUp
+  );
+  canvas.upperCanvasEl.addEventListener(
+    'pointerleave',
+    handleCanvasPointerLeave
+  );
 
   // Double click on image to get into cropping mode
   fabric.util.addListener(

@@ -1,0 +1,10 @@
+{
+  "name": "motionity",
+  "private": true,
+  "devDependencies": {
+    "postcss": "^8.4.35"
+  },
+  "scripts": {
+    "test:e2e": "node --test tests/e2e/*.test.js"
+  }
+}

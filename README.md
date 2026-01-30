@@ -26,6 +26,11 @@ Made by [Alyssa X](https://twitter.com/alyssaxuu)
 🧩 Pixabay integration<br>
 ...and much more - all for free & no sign in needed!
 
+## E2E tests
+
+1. Install dependencies: `npm install`
+2. Run tests: `npm run test:e2e`
+
 #
 
 Feel free to reach out to me through email at hi@alyssax.com or [on Twitter](https://twitter.com/alyssaxuu) if you have any questions or feedback! Hope you find this useful 💜

@@ -5205,8 +5205,13 @@ function keyframeSnap(drag) {
 
 // Dragging a keyframe
 function dragKeyframe(e) {
-  if (e.which == 3) {
+  if (e.button === 2) {
     return false;
+  }
+  var pointerId = e.pointerId;
+  var captureTarget = e.currentTarget;
+  if (captureTarget && captureTarget.setPointerCapture) {
+    captureTarget.setPointerCapture(pointerId);
   }
   e.stopPropagation();
   e.preventDefault();
@@ -5261,9 +5266,16 @@ function dragKeyframe(e) {
     }
   }
   function releasedKeyframe(e) {
-    $('body')
-      .off('mousemove', draggingKeyframe)
-      .off('mouseup', releasedKeyframe);
+    if (
+      captureTarget &&
+      captureTarget.releasePointerCapture &&
+      pointerId !== undefined
+    ) {
+      captureTarget.releasePointerCapture(pointerId);
+    }
+    $(window)
+      .off('pointermove', draggingKeyframe)
+      .off('pointerup pointercancel', releasedKeyframe);
     $('#line-snap').removeClass('line-active');
     if (move) {
       if (shiftkeys.length == 0) {
@@ -5301,18 +5313,18 @@ function dragKeyframe(e) {
           }
         });
       }
-    } else if (!e.shiftDown) {
+    } else if (!e.shiftKey) {
       keyframeProperties(inst);
     }
     move = false;
     $('.line-active').removeClass('line-active');
     save();
   }
-  $('body')
-    .on('mouseup', releasedKeyframe)
-    .on('mousemove', draggingKeyframe);
+  $(window)
+    .on('pointerup pointercancel', releasedKeyframe)
+    .on('pointermove', draggingKeyframe);
 }
-$(document).on('mousedown', '.keyframe', dragKeyframe);
+$(document).on('pointerdown', '.keyframe', dragKeyframe);
 
 // Render current time in the playback area
 function renderTime() {
@@ -5359,8 +5371,13 @@ function updateTime(drag, check) {
 
 // Dragging the seekbar
 function dragSeekBar(e) {
-  if (e.which == 3) {
+  if (e.button === 2) {
     return false;
+  }
+  var pointerId = e.pointerId;
+  var captureTarget = e.currentTarget;
+  if (captureTarget && captureTarget.setPointerCapture) {
+    captureTarget.setPointerCapture(pointerId);
   }
   var drag = $(this);
   var pageX = e.pageX;
@@ -5405,7 +5422,16 @@ function dragSeekBar(e) {
     renderTime();
   }
   function released(e) {
-    $('body').off('mousemove', dragging).off('mouseup', released);
+    if (
+      captureTarget &&
+      captureTarget.releasePointerCapture &&
+      pointerId !== undefined
+    ) {
+      captureTarget.releasePointerCapture(pointerId);
+    }
+    $(window)
+      .off('pointermove', dragging)
+      .off('pointerup pointercancel', released);
     updateTime(drag, false);
     seeking = false;
     if (tempselection && tempselection.type != 'activeSelection') {
@@ -5413,14 +5439,21 @@ function dragSeekBar(e) {
     }
     updatePanelValues();
   }
-  $('body').on('mouseup', released).on('mousemove', dragging);
+  $(window)
+    .on('pointerup pointercancel', released)
+    .on('pointermove', dragging);
 }
-$(document).on('mousedown', '#seekbar', dragSeekBar);
+$(document).on('pointerdown', '#seekbar', dragSeekBar);
 
 // Dragging layer horizontally
 function dragObjectProps(e) {
-  if (e.which == 3) {
+  if (e.button === 2) {
     return false;
+  }
+  var pointerId = e.pointerId;
+  var captureTarget = e.currentTarget;
+  if (captureTarget && captureTarget.setPointerCapture) {
+    captureTarget.setPointerCapture(pointerId);
   }
   var drag = $(this).parent();
   var drag2 = $(this).find('.trim-row');
@@ -5585,7 +5618,16 @@ function dragObjectProps(e) {
     }
   }
   function released(e) {
-    $('body').off('mousemove', dragging).off('mouseup', released);
+    if (
+      captureTarget &&
+      captureTarget.releasePointerCapture &&
+      pointerId !== undefined
+    ) {
+      captureTarget.releasePointerCapture(pointerId);
+    }
+    $(window)
+      .off('pointermove', dragging)
+      .off('pointerup pointercancel', released);
     if (opened) {
       $(".layer[data-object='" + drag.attr('id') + "']")
         .find('.properties')
@@ -5601,11 +5643,17 @@ function dragObjectProps(e) {
     animate(false, currenttime);
     save();
   }
-  $('body').on('mouseup', released).on('mousemove', dragging);
+  $(window)
+    .on('pointerup pointercancel', released)
+    .on('pointermove', dragging);
 }
-$(document).on('mousedown', '.main-row', dragObjectProps);
+$(document).on('pointerdown', '.main-row', dragObjectProps);
 
 function resetHeight() {
+  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+    resizeCanvas();
+    return;
+  }
   var top = $(window).height() - oldtimelinepos - 92;
   if ($('#upload-tool').hasClass('tool-active')) {
     $('#browser').css('top', '150px');
@@ -5634,31 +5682,49 @@ function resetHeight() {
 
 // Dragging timeline vertically
 function dragTimeline(e) {
+  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+    e.preventDefault();
+    $('body').toggleClass('timeline-collapsed');
+    resizeCanvas();
+    return false;
+  }
   const disableselect = (e) => {  
     return false  
   }  
   document.onselectstart = disableselect  
-  document.onmousedown = disableselect
+  document.onpointerdown = disableselect
   
   oldtimelinepos = e.pageY;
-  if (e.which == 3) {
+  if (e.button === 2) {
     return false;
+  }
+  var pointerId = e.pointerId;
+  var captureTarget = e.currentTarget;
+  if (captureTarget && captureTarget.setPointerCapture) {
+    captureTarget.setPointerCapture(pointerId);
   }
   function draggingKeyframe(e) {
     oldtimelinepos = e.pageY;
     resetHeight(e);
   }
   function releasedKeyframe(e) {
-    $('body')
-      .off('mousemove', draggingKeyframe)
-      .off('mouseup', releasedKeyframe);
+    if (
+      captureTarget &&
+      captureTarget.releasePointerCapture &&
+      pointerId !== undefined
+    ) {
+      captureTarget.releasePointerCapture(pointerId);
+    }
+    $(window)
+      .off('pointermove', draggingKeyframe)
+      .off('pointerup pointercancel', releasedKeyframe);
   }
-  $('body')
-    .on('mouseup', releasedKeyframe)
-    .on('mousemove', draggingKeyframe);
+  $(window)
+    .on('pointerup pointercancel', releasedKeyframe)
+    .on('pointermove', draggingKeyframe);
 }
 
-$(document).on('mousedown', '#timeline-handle', dragTimeline);
+$(document).on('pointerdown', '#timeline-handle', dragTimeline);
 
 oldtimelinepos = $(window).height() - 92 - $('#timearea').height();
 
@@ -5925,13 +5991,13 @@ function followCursor(e) {
     $('#seek-hover').offset({ left: e.pageX });
   }
 }
-$(document).on('mousemove', '#timearea', followCursor);
-$(document).on('mousemove', '#seekevents', followCursor);
-$(document).on('mousemove', '#toolbar', hideSeekbar);
-$(document).on('mousemove', '#canvas-area', hideSeekbar);
-$(document).on('mousemove', '#browser', hideSeekbar);
-$(document).on('mousemove', '#properties', hideSeekbar);
-$(document).on('mousemove', '#controls', hideSeekbar);
+$(document).on('pointermove', '#timearea', followCursor);
+$(document).on('pointermove', '#seekevents', followCursor);
+$(document).on('pointermove', '#toolbar', hideSeekbar);
+$(document).on('pointermove', '#canvas-area', hideSeekbar);
+$(document).on('pointermove', '#browser', hideSeekbar);
+$(document).on('pointermove', '#properties', hideSeekbar);
+$(document).on('pointermove', '#controls', hideSeekbar);
 
 function orderLayers() {
   $('.layer').each(function (index) {
@@ -5950,20 +6016,21 @@ function orderLayers() {
   save();
 }
 
-function handTool() {
-  if ($(this).hasClass('hand-active')) {
-    $(this).removeClass('hand-active');
-    $(this).find('img').attr('src', 'assets/hand-tool.svg');
-    handtool = false;
-    canvas.defaultCursor = 'default';
-    canvas.renderAll();
-  } else {
-    $(this).addClass('hand-active');
-    $(this).find('img').attr('src', 'assets/hand-tool-active.svg');
-    handtool = true;
+function setHandToolActive(active) {
+  handtool = active;
+  if (active) {
+    $('#hand-tool').addClass('hand-active');
+    $('#hand-tool').find('img').attr('src', 'assets/hand-tool-active.svg');
     canvas.defaultCursor = 'grab';
-    canvas.renderAll();
+  } else {
+    $('#hand-tool').removeClass('hand-active');
+    $('#hand-tool').find('img').attr('src', 'assets/hand-tool.svg');
+    canvas.defaultCursor = 'default';
   }
+  canvas.renderAll();
+}
+function handTool() {
+  setHandToolActive(!handtool);
 }
 $(document).on('click', '#hand-tool', handTool);
 // Set defaults

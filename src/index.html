@@ -8,7 +8,7 @@
         <link rel="stylesheet" href="magic-check.min.css">
         <link rel="stylesheet" href="styles.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
-        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
 				<!-- Primary Meta Tags -->
 <title>Motionity - The web-based motion graphics editor for everyone</title>
@@ -362,6 +362,62 @@
 							<div id="download"><img src="assets/download-icon.svg"> Download</div>
 						</div>
         </div>
+				<div id="mobile-library-bar" class="noselect">
+					<button id="mobile-library-close" aria-label="Close library">
+						<img src="assets/close.svg" alt="">
+					</button>
+					<div id="mobile-library-title">Library</div>
+					<select id="mobile-library-select" aria-label="Choose library">
+						<option value="upload-tool">Uploads</option>
+						<option value="shape-tool">Objects</option>
+						<option value="image-tool">Images</option>
+						<option value="text-tool">Text</option>
+						<option value="video-tool">Videos</option>
+						<option value="audio-tool">Audio</option>
+					</select>
+				</div>
+				<div id="mobile-sheet" class="noselect">
+					<div id="mobile-sheet-handle"></div>
+					<div id="mobile-sheet-tabs">
+						<button class="mobile-sheet-tab mobile-sheet-tab-active" data-sheet="layers">Layers</button>
+						<button class="mobile-sheet-tab" data-sheet="properties">Properties</button>
+					</div>
+					<div id="mobile-sheet-body"></div>
+				</div>
+				<div id="mobile-toolbar" class="noselect">
+					<button id="mobile-select" class="mobile-tool mobile-toggle mobile-toggle-active">
+						<img src="assets/shape.svg" alt="">
+						<span>Select</span>
+					</button>
+					<button id="mobile-pan" class="mobile-tool mobile-toggle">
+						<img src="assets/hand-tool.svg" alt="">
+						<span>Pan</span>
+					</button>
+					<button id="mobile-library" class="mobile-tool">
+						<img src="assets/search.svg" alt="">
+						<span>Library</span>
+					</button>
+					<button id="mobile-undo" class="mobile-tool">
+						<img src="assets/undo.svg" alt="">
+						<span>Undo</span>
+					</button>
+					<button id="mobile-redo" class="mobile-tool mobile-redo">
+						<img src="assets/undo.svg" alt="">
+						<span>Redo</span>
+					</button>
+					<button id="mobile-add-text" class="mobile-tool">
+						<img src="assets/text.svg" alt="">
+						<span>Text</span>
+					</button>
+					<button id="mobile-panels" class="mobile-tool">
+						<img src="assets/more-hoz.svg" alt="">
+						<span>Panels</span>
+					</button>
+					<button id="mobile-export" class="mobile-tool">
+						<img src="assets/download-icon.svg" alt="">
+						<span>Export</span>
+					</button>
+				</div>
         
         <video id="test-video"></video>
         <input id="emptyInput" value=" " style="opacity:0">

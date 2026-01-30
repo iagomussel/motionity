@@ -1254,6 +1254,7 @@ function switchTool(e) {
     $(this).find('img').attr('src', 'assets/audio-active.svg');
   }
   updateBrowser($(this).attr('id'));
+  syncMobileLibrarySelect();
   resetHeight();
 }
 $(document).on('click', '.tool:not(.tool-active)', switchTool);
@@ -1276,8 +1277,13 @@ function replaceObject(src, object) {
 
 // Drag object from the panel
 function dragObject(e) {
-  if (e.which == 3) {
+  if (e.button === 2) {
     return false;
+  }
+  var pointerId = e.pointerId;
+  var captureTarget = e.currentTarget;
+  if (captureTarget && captureTarget.setPointerCapture) {
+    captureTarget.setPointerCapture(pointerId);
   }
   var drag = $(this).clone();
   drag.css({
@@ -1361,7 +1367,16 @@ function dragObject(e) {
     $('#properties').removeClass('noselect');
     $('#controls').removeClass('noselect');
     draggingPanel = false;
-    $('body').off('mousemove', dragging).off('mouseup', released);
+    if (
+      captureTarget &&
+      captureTarget.releasePointerCapture &&
+      pointerId !== undefined
+    ) {
+      captureTarget.releasePointerCapture(pointerId);
+    }
+    $(window)
+      .off('pointermove', dragging)
+      .off('pointerup pointercancel', released);
     canvasx = canvas.getPointer(e).x;
     canvasy = canvas.getPointer(e).y;
     var xpos = canvasx + offsetx - artboard.get('left');
@@ -1561,19 +1576,25 @@ function dragObject(e) {
     }
     drag.remove();
   }
-  $('body').on('mouseup', released).on('mousemove', dragging);
+  $(window)
+    .on('pointerup pointercancel', released)
+    .on('pointermove', dragging);
 }
-$(document).on('mousedown', '.image-grid-item', dragObject);
-$(document).on('mousedown', '.video-grid-item', dragObject);
-$(document).on('mousedown', '.grid-item', dragObject);
-$(document).on('mousedown', '.grid-emoji-item', dragObject);
-$(document).on('mousedown', '.add-text', dragObject);
+$(document).on('pointerdown', '.image-grid-item', dragObject);
+$(document).on('pointerdown', '.video-grid-item', dragObject);
+$(document).on('pointerdown', '.grid-item', dragObject);
+$(document).on('pointerdown', '.grid-emoji-item', dragObject);
+$(document).on('pointerdown', '.add-text', dragObject);
 $(document).on('mousedown click mouseup', '.credit', function (e) {
   e.stopPropagation();
 });
 
 // Collapse library
 function collapsePanel() {
+  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+    setMobileLibraryOpen(false);
+    return;
+  }
   $('#browser').addClass('collapsed');
   $('#behind-browser').addClass('collapsed');
   $('#canvas-area').addClass('canvas-full');
@@ -1725,6 +1746,198 @@ function importExportModal() {
   $('#background-overlay').toggleClass('modal-open');
 }
 $('#share').on('click', importExportModal);
+
+var mobileLayout = {
+  active: false,
+  layerHome: null,
+  propertiesHome: null,
+  sheetMode: 'layers',
+};
+
+function storeHome($el) {
+  return { parent: $el.parent(), next: $el.next() };
+}
+
+function restoreElement($el, home) {
+  if (!home || !home.parent || home.parent.length === 0) {
+    return;
+  }
+  if (home.next && home.next.length) {
+    $el.insertBefore(home.next);
+  } else {
+    $el.appendTo(home.parent);
+  }
+}
+
+function applyMobileLayout() {
+  var isMobile =
+    window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  if (isMobile && !mobileLayout.active) {
+    var $layerList = $('#layer-list');
+    var $properties = $('#properties');
+    if (!mobileLayout.layerHome) {
+      mobileLayout.layerHome = storeHome($layerList);
+    }
+    if (!mobileLayout.propertiesHome) {
+      mobileLayout.propertiesHome = storeHome($properties);
+    }
+    $('#mobile-sheet-body').append($layerList, $properties);
+    $('body').removeClass('mobile-sheet-open');
+    $('body')
+      .removeClass('mobile-sheet-properties')
+      .addClass('mobile-sheet-layers');
+    $('.mobile-sheet-tab').removeClass('mobile-sheet-tab-active');
+    $('.mobile-sheet-tab[data-sheet="layers"]').addClass(
+      'mobile-sheet-tab-active'
+    );
+    mobileLayout.active = true;
+    syncMobileLibrarySelect();
+  } else if (!isMobile && mobileLayout.active) {
+    restoreElement($('#layer-list'), mobileLayout.layerHome);
+    restoreElement($('#properties'), mobileLayout.propertiesHome);
+    $('body')
+      .removeClass('mobile-sheet-open')
+      .removeClass('mobile-sheet-layers')
+      .removeClass('mobile-sheet-properties')
+      .removeClass('timeline-collapsed')
+      .removeClass('mobile-library-open');
+    $('#mobile-library').removeClass('mobile-toggle-active');
+    mobileLayout.active = false;
+  }
+}
+
+function syncMobileLibrarySelect() {
+  if (!mobileLayout.active) {
+    return;
+  }
+  var activeTool = $('.tool-active').attr('id');
+  if (!activeTool) {
+    return;
+  }
+  var $select = $('#mobile-library-select');
+  if ($select.length && $select.find('option[value="' + activeTool + '"]').length) {
+    $select.val(activeTool);
+  }
+}
+
+function setMobileLibraryOpen(open) {
+  if (!mobileLayout.active) {
+    return;
+  }
+  if (open) {
+    $('#browser').removeClass('collapsed');
+    $('#behind-browser').removeClass('collapsed');
+    $('body').addClass('mobile-library-open');
+    $('#mobile-library').addClass('mobile-toggle-active');
+    syncMobileLibrarySelect();
+  } else {
+    $('body').removeClass('mobile-library-open');
+    $('#mobile-library').removeClass('mobile-toggle-active');
+  }
+}
+
+function setMobileSheet(mode) {
+  if (!mobileLayout.active) {
+    return;
+  }
+  var alreadyOpen = $('body').hasClass('mobile-sheet-open');
+  if (alreadyOpen && mobileLayout.sheetMode === mode) {
+    $('body').removeClass('mobile-sheet-open');
+    return;
+  }
+  mobileLayout.sheetMode = mode;
+  $('body')
+    .addClass('mobile-sheet-open')
+    .removeClass('mobile-sheet-layers mobile-sheet-properties')
+    .addClass('mobile-sheet-' + mode);
+  $('.mobile-sheet-tab').removeClass('mobile-sheet-tab-active');
+  $('.mobile-sheet-tab[data-sheet="' + mode + '"]').addClass(
+    'mobile-sheet-tab-active'
+  );
+}
+
+$(document).on('click', '.mobile-sheet-tab', function () {
+  setMobileSheet($(this).attr('data-sheet'));
+});
+$(document).on('click', '#mobile-sheet-handle', function () {
+  if (!$('body').hasClass('mobile-sheet-open')) {
+    setMobileSheet(mobileLayout.sheetMode);
+  } else {
+    $('body').removeClass('mobile-sheet-open');
+  }
+});
+$(document).on('click', '#mobile-library', function () {
+  var isOpen = $('body').hasClass('mobile-library-open');
+  setMobileLibraryOpen(!isOpen);
+});
+$(document).on('click', '#mobile-library-close', function () {
+  setMobileLibraryOpen(false);
+});
+$(document).on('change', '#mobile-library-select', function () {
+  var toolId = $(this).val();
+  if (toolId) {
+    $('#' + toolId).trigger('click');
+  }
+});
+
+function setMobileSelectActive(active) {
+  if (active) {
+    setHandToolActive(false);
+    canvas.selection = true;
+    $('#mobile-select').addClass('mobile-toggle-active');
+    $('#mobile-pan').removeClass('mobile-toggle-active');
+  }
+}
+
+function setMobilePanActive(active) {
+  if (active) {
+    setHandToolActive(true);
+    canvas.selection = false;
+    $('#mobile-pan').addClass('mobile-toggle-active');
+    $('#mobile-select').removeClass('mobile-toggle-active');
+  } else {
+    setHandToolActive(false);
+    canvas.selection = true;
+    $('#mobile-pan').removeClass('mobile-toggle-active');
+    $('#mobile-select').addClass('mobile-toggle-active');
+  }
+}
+
+$(document).on('click', '#mobile-select', function () {
+  setMobileSelectActive(true);
+});
+$(document).on('click', '#mobile-pan', function () {
+  setMobilePanActive(!$('#mobile-pan').hasClass('mobile-toggle-active'));
+});
+$(document).on('click', '#mobile-undo', function () {
+  $('#undo').trigger('click');
+});
+$(document).on('click', '#mobile-redo', function () {
+  $('#redo').trigger('click');
+});
+$(document).on('click', '#mobile-add-text', function () {
+  newTextbox(
+    50,
+    700,
+    'Add a heading',
+    artboard.get('left') + artboard.get('width') / 2,
+    artboard.get('top') + artboard.get('height') / 2,
+    300,
+    true,
+    'Inter'
+  );
+});
+$(document).on('click', '#mobile-panels', function () {
+  var hasSelection =
+    canvas && canvas.getActiveObject && canvas.getActiveObject();
+  setMobileSheet(hasSelection ? 'properties' : 'layers');
+});
+$(document).on('click', '#mobile-export', function () {
+  downloadModal();
+});
+
+$(window).on('resize', applyMobileLayout);
+$(document).ready(applyMobileLayout);
 
 function searchInput() {
   var value = $(this).val().toLowerCase();
