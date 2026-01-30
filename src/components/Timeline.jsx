@@ -1,6 +1,14 @@
 import { useMemo, useRef } from 'react'
 
-function Timeline({ duration, currentTime, onTimeChange, items }) {
+function Timeline({
+  duration,
+  currentTime,
+  onTimeChange,
+  items,
+  isPlaying = false,
+  onPlayToggle = () => {},
+  onReset = () => {}
+}) {
   const containerRef = useRef(null)
   const ticks = useMemo(() => {
     const count = Math.max(1, Math.floor(duration))
@@ -18,7 +26,15 @@ function Timeline({ duration, currentTime, onTimeChange, items }) {
   return (
     <section className="timeline" aria-label="Timeline">
       <div className="timeline-header">
-        <span>Timeline</span>
+        <div className="timeline-title">
+          <span>Timeline</span>
+          <button type="button" className="timeline-control" onClick={onPlayToggle}>
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <button type="button" className="timeline-control ghost" onClick={onReset}>
+            Reset
+          </button>
+        </div>
         <span>{currentTime.toFixed(2)}s / {duration}s</span>
       </div>
       <div

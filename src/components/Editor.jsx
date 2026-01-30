@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
+import usePlayback from '../hooks/usePlayback'
 
 const DEFAULT_DURATION = 15
 
@@ -37,8 +38,10 @@ function createText(id) {
 function Editor() {
   const [objects, setObjects] = useState(() => [createRect('rect-1')])
   const [selectedId, setSelectedId] = useState('rect-1')
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(DEFAULT_DURATION)
+  const [duration] = useState(DEFAULT_DURATION)
+  const { currentTime, isPlaying, toggle, seek } = usePlayback({
+    duration
+  })
 
   const handleAddRect = () => {
     setObjects((prev) => {
@@ -119,7 +122,10 @@ function Editor() {
       <Timeline
         duration={duration}
         currentTime={currentTime}
-        onTimeChange={setCurrentTime}
+        isPlaying={isPlaying}
+        onPlayToggle={toggle}
+        onTimeChange={seek}
+        onReset={() => seek(0)}
         items={timelineItems}
       />
     </div>
