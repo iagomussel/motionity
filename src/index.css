@@ -594,9 +594,57 @@ button:hover {
   font-size: 12px;
 }
 
-.timeline-time {
+.timeline-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.timeline-timebox {
+  background: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 6px 8px;
+  min-width: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-timebox input {
+  background: transparent;
+  border: none;
+  color: #cbd5f5;
+  font-size: 11px;
   font-family: 'ui-monospace', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
-  color: #94a3b8;
+  text-align: center;
+}
+
+.timeline-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-icon.play {
+  background: #f8fafc;
+  border-color: transparent;
+}
+
+.timeline-icon.play img {
+  filter: none;
+}
+
+.timeline-icon img {
+  width: 16px;
+  height: 16px;
+  filter: invert(80%);
 }
 
 .timeline-transport {

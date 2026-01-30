@@ -18,6 +18,15 @@ function Timeline({
     return Array.from({ length: count + 1 }, (_, i) => i)
   }, [duration])
   const contentWidth = Math.max(480, duration * pixelsPerSecond)
+  const formatTime = (value) => {
+    const safe = Math.max(0, value || 0)
+    const hours = Math.floor(safe / 3600)
+    const minutes = Math.floor((safe % 3600) / 60)
+    const seconds = Math.floor(safe % 60)
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
 
   const handlePointer = (event) => {
     const rect = containerRef.current?.getBoundingClientRect()
@@ -31,20 +40,33 @@ function Timeline({
     <section className={`timeline ${className}`.trim()} aria-label="Timeline">
       {variant === 'mobile' ? (
         <div className="timeline-header mobile">
-          <span className="timeline-time">{currentTime.toFixed(2)}s</span>
-          <div className="timeline-transport">
-            <button type="button" onClick={() => onTimeChange(Math.max(0, currentTime - 1))}>
+          <div className="timeline-player" id="playback">
+            <div className="timeline-timebox" id="current-time">
+              <input value={formatTime(currentTime)} readOnly />
+            </div>
+            <button
+              type="button"
+              className="timeline-icon"
+              onClick={() => onTimeChange(Math.max(0, currentTime - 1))}
+            >
               <img src="/assets/skip.svg" alt="Back" />
             </button>
-            <button type="button" className="play" onClick={onPlayToggle}>
+            <button type="button" className="timeline-icon play" onClick={onPlayToggle}>
               <img
                 src={isPlaying ? '/assets/pause-button.svg' : '/assets/play-button.svg'}
                 alt={isPlaying ? 'Pause' : 'Play'}
               />
             </button>
-            <button type="button" onClick={() => onTimeChange(Math.min(duration, currentTime + 1))}>
+            <button
+              type="button"
+              className="timeline-icon"
+              onClick={() => onTimeChange(Math.min(duration, currentTime + 1))}
+            >
               <img src="/assets/skip.svg" alt="Forward" className="flip-x" />
             </button>
+            <div className="timeline-timebox" id="total-time">
+              <input value={formatTime(duration)} readOnly />
+            </div>
           </div>
           <button type="button" className="layers-button" onClick={onReset}>
             <img src="/assets/more-hoz.svg" alt="Layers" />
