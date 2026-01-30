@@ -1253,6 +1253,7 @@ function switchTool(e) {
   } else if ($(this).attr('id') == 'audio-tool') {
     $(this).find('img').attr('src', 'assets/audio-active.svg');
   }
+  setMobileAssetsActive(false);
   updateBrowser($(this).attr('id'));
   syncMobileLibrarySelect();
   resetHeight();
@@ -1752,6 +1753,9 @@ var mobileLayout = {
   layerHome: null,
   propertiesHome: null,
   sheetMode: 'layers',
+  assetsActive: false,
+  assetsCategory: 'All',
+  assetsQuery: ''
 };
 
 function storeHome($el) {
@@ -1802,12 +1806,16 @@ function applyMobileLayout() {
       .removeClass('timeline-collapsed')
       .removeClass('mobile-library-open');
     $('#mobile-library').removeClass('mobile-toggle-active');
+    setMobileAssetsActive(false);
     mobileLayout.active = false;
   }
 }
 
 function syncMobileLibrarySelect() {
   if (!mobileLayout.active) {
+    return;
+  }
+  if (mobileLayout.assetsActive) {
     return;
   }
   var activeTool = $('.tool-active').attr('id');
@@ -1820,6 +1828,103 @@ function syncMobileLibrarySelect() {
   }
 }
 
+var mobileAssets = [
+  { name: 'Beach', src: 'assets/beach.png', category: 'Nature' },
+  { name: 'Forest', src: 'assets/forest.png', category: 'Nature' },
+  { name: 'Nature', src: 'assets/nature.png', category: 'Nature' },
+  { name: 'Rain', src: 'assets/rain.png', category: 'Nature' },
+  { name: 'Summer', src: 'assets/summer.png', category: 'Nature' },
+  { name: 'Space', src: 'assets/space.png', category: 'Abstract' },
+  { name: 'Wallpaper', src: 'assets/wallpaper.png', category: 'Abstract' },
+  { name: 'Background', src: 'assets/background.png', category: 'Abstract' },
+  { name: 'Street', src: 'assets/street.png', category: 'Urban' },
+  { name: 'Office', src: 'assets/office.png', category: 'Urban' },
+  { name: 'Cars', src: 'assets/cars.png', category: 'Urban' },
+  { name: 'Travel', src: 'assets/travel.png', category: 'Lifestyle' },
+  { name: 'Food', src: 'assets/food.png', category: 'Lifestyle' },
+  { name: 'Meditation', src: 'assets/meditation.png', category: 'Lifestyle' },
+  { name: 'Work', src: 'assets/work.png', category: 'Lifestyle' },
+  { name: 'Animals', src: 'assets/animals.png', category: 'Lifestyle' }
+];
+
+function setMobileAssetsActive(active) {
+  mobileLayout.assetsActive = active;
+  if (!active) {
+    mobileLayout.assetsCategory = 'All';
+    mobileLayout.assetsQuery = '';
+  }
+}
+
+function renderMobileAssetsPanel() {
+  if (!mobileLayout.active) {
+    return;
+  }
+  var $container = $('#browser-container');
+  var categories = ['All', 'Nature', 'Urban', 'Lifestyle', 'Abstract'];
+  var query = (mobileLayout.assetsQuery || '').toLowerCase().trim();
+  var category = mobileLayout.assetsCategory || 'All';
+  var filtered = mobileAssets.filter(function (asset) {
+    var matchesCategory = category === 'All' || asset.category === category;
+    var matchesQuery =
+      !query || asset.name.toLowerCase().indexOf(query) !== -1;
+    return matchesCategory && matchesQuery;
+  });
+  var chipsHtml = categories
+    .map(function (cat) {
+      var activeClass = cat === category ? ' active' : '';
+      return (
+        "<button class='mobile-assets-chip" +
+        activeClass +
+        "' data-category='" +
+        cat +
+        "'>" +
+        cat +
+        '</button>'
+      );
+    })
+    .join('');
+  var cardsHtml = filtered
+    .map(function (asset) {
+      return (
+        "<div class='image-grid-item mobile-assets-card' data-src='" +
+        asset.src +
+        "' data-type='image' data-category='" +
+        asset.category +
+        "'>" +
+        "<img draggable='false' src='" +
+        asset.src +
+        "' alt=''>" +
+        '<span>' +
+        asset.name +
+        '</span></div>'
+      );
+    })
+    .join('');
+  $container.html(
+    "<div class='mobile-assets-panel'>" +
+      "<div class='mobile-assets-header'>" +
+      "<div class='mobile-assets-title'>Assets</div></div>" +
+      "<div class='mobile-assets-search'><img src='assets/search.svg' alt=''>" +
+      "<input id='mobile-assets-search-input' placeholder='Search assets' value='" +
+      (mobileLayout.assetsQuery || '') +
+      "'></div>" +
+      "<div class='mobile-assets-chips'>" +
+      chipsHtml +
+      '</div>' +
+      "<div class='mobile-assets-grid'>" +
+      cardsHtml +
+      '</div></div>'
+  );
+}
+
+function showMobileAssetsPanel() {
+  if (!mobileLayout.active) {
+    return;
+  }
+  setMobileAssetsActive(true);
+  renderMobileAssetsPanel();
+}
+
 function setMobileLibraryOpen(open) {
   if (!mobileLayout.active) {
     return;
@@ -1829,6 +1934,9 @@ function setMobileLibraryOpen(open) {
     $('#behind-browser').removeClass('collapsed');
     $('body').addClass('mobile-library-open');
     $('#mobile-library').addClass('mobile-toggle-active');
+    if ($('#mobile-library-select').val() === 'mobile-assets') {
+      showMobileAssetsPanel();
+    }
     syncMobileLibrarySelect();
   } else {
     $('body').removeClass('mobile-library-open');
@@ -1875,9 +1983,22 @@ $(document).on('click', '#mobile-library-close', function () {
 });
 $(document).on('change', '#mobile-library-select', function () {
   var toolId = $(this).val();
+  if (toolId === 'mobile-assets') {
+    showMobileAssetsPanel();
+    return;
+  }
+  setMobileAssetsActive(false);
   if (toolId) {
     $('#' + toolId).trigger('click');
   }
+});
+$(document).on('input', '#mobile-assets-search-input', function () {
+  mobileLayout.assetsQuery = $(this).val();
+  renderMobileAssetsPanel();
+});
+$(document).on('click', '.mobile-assets-chip', function () {
+  mobileLayout.assetsCategory = $(this).attr('data-category');
+  renderMobileAssetsPanel();
 });
 
 function setMobileSelectActive(active) {

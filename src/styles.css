@@ -3008,6 +3008,93 @@ layer:nth-child(even) .properties {
   body.mobile-library-open #behind-browser {
     display: none;
   }
+  .mobile-assets-panel {
+    padding-top: 56px;
+  }
+  .mobile-assets-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0px 6px;
+  }
+  .mobile-assets-title {
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--main-text-color);
+  }
+  .mobile-assets-search {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--input-color);
+    border: 1px solid var(--panel-stroke);
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+  .mobile-assets-search input {
+    border: none;
+    background: transparent;
+    color: var(--main-text-color);
+    font-family: Inter;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+  }
+  .mobile-assets-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0px;
+  }
+  .mobile-assets-chip {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--panel-stroke);
+    background: #0e1126;
+    color: var(--main-text-color);
+    font-family: Inter;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mobile-assets-chip.active {
+    background: var(--accent-color);
+    border-color: transparent;
+    color: #0b0f23;
+  }
+  .mobile-assets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-bottom: 24px;
+  }
+  .mobile-assets-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0e1126;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .mobile-assets-card img {
+    display: block;
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+  }
+  .mobile-assets-card span {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    background: rgba(12, 13, 26, 0.75);
+    color: var(--main-text-color);
+    font-family: Inter;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+  }
   #mobile-toolbar::-webkit-scrollbar {
     height: 0px;
   }

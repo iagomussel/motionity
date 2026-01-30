@@ -10,6 +10,13 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
         <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <script>
+          if (window.matchMedia && window.matchMedia('(min-width: 769px)').matches) {
+            if (!window.location.pathname.endsWith('/index.html')) {
+              window.location.replace('index.html');
+            }
+          }
+        </script>
 				<!-- Primary Meta Tags -->
 <title>Motionity - The web-based motion graphics editor for everyone</title>
 <meta name="title" content="Motionity - The web-based motion graphics editor for everyone">
@@ -368,6 +375,7 @@
 					</button>
 					<div id="mobile-library-title">Library</div>
 					<select id="mobile-library-select" aria-label="Choose library">
+						<option value="mobile-assets">Assets</option>
 						<option value="upload-tool">Uploads</option>
 						<option value="shape-tool">Objects</option>
 						<option value="image-tool">Images</option>
