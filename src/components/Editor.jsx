@@ -109,20 +109,68 @@ function Editor() {
   const isMobile = useMediaQuery('(max-width: 900px)')
 
   const handleAddRect = () => {
+    let createdId = null
     setObjects((prev) => {
       const nextId = `rect-${prev.length + 1}`
+      createdId = nextId
       return [...prev, createRect(nextId)]
     })
-    setSelectedId(`rect-${objects.length + 1}`)
+    if (createdId) setSelectedId(createdId)
   }
 
   const handleAddText = () => {
+    let createdId = null
     setObjects((prev) => {
       const nextId = `text-${prev.length + 1}`
+      createdId = nextId
       return [...prev, createText(nextId)]
     })
-    setSelectedId(`text-${objects.length + 1}`)
+    if (createdId) setSelectedId(createdId)
   }
+
+  const handleAddImage = () => {
+    let createdId = null
+    setObjects((prev) => {
+      const nextId = `rect-${prev.length + 1}`
+      createdId = nextId
+      const imageRect = createRect(nextId)
+      return [
+        ...prev,
+        {
+          ...imageRect,
+          fill: '#22c55e'
+        }
+      ]
+    })
+    if (createdId) setSelectedId(createdId)
+  }
+
+  const handleDuplicate = useCallback(() => {
+    let createdId = null
+    setObjects((prev) => {
+      const target = prev.find((obj) => obj.id === selectedId)
+      if (!target) return prev
+      const nextId = `${target.type}-${prev.length + 1}`
+      createdId = nextId
+      const duplicate = {
+        ...target,
+        id: nextId,
+        x: target.x + 24,
+        y: target.y + 24,
+        keyframes: target.keyframes.map((frame) => ({
+          time: frame.time,
+          props: { ...frame.props }
+        }))
+      }
+      return [...prev, duplicate]
+    })
+    if (createdId) setSelectedId(createdId)
+  }, [selectedId])
+
+  const handleDelete = useCallback(() => {
+    setObjects((prev) => prev.filter((obj) => obj.id !== selectedId))
+    setSelectedId(null)
+  }, [selectedId])
 
   const updateObject = useCallback((id, attrs) => {
     setObjects((prev) =>
@@ -177,6 +225,9 @@ function Editor() {
     onChange: updateObject,
     onAddRect: handleAddRect,
     onAddText: handleAddText,
+    onAddImage: handleAddImage,
+    onDuplicate: handleDuplicate,
+    onDelete: handleDelete,
     timelineItems,
     duration,
     currentTime,

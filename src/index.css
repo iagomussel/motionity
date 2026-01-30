@@ -72,6 +72,34 @@ button:hover {
   gap: 12px;
 }
 
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+}
+
+.toolbar-button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.toolbar-button:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.toolbar-button.danger {
+  color: #f87171;
+}
+
 .editor-main {
   flex: 1;
   padding: 16px;

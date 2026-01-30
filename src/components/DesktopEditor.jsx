@@ -1,5 +1,6 @@
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
+import Toolbar from './Toolbar'
 
 function DesktopEditor({
   objects,
@@ -8,6 +9,9 @@ function DesktopEditor({
   onChange,
   onAddRect,
   onAddText,
+  onAddImage,
+  onDuplicate,
+  onDelete,
   timelineItems,
   duration,
   currentTime,
@@ -22,14 +26,13 @@ function DesktopEditor({
         <div className="brand">
           <span className="brand-accent">Velo</span>Motion
         </div>
-        <div className="editor-actions">
-          <button type="button" onClick={onAddRect}>
-            Add Rect
-          </button>
-          <button type="button" onClick={onAddText}>
-            Add Text
-          </button>
-        </div>
+        <Toolbar
+          onAddRect={onAddRect}
+          onAddText={onAddText}
+          onAddImage={onAddImage}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+        />
       </header>
       <main className="editor-main">
         <CanvasStage
