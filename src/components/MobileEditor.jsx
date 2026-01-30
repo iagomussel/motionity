@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import AssetsPanel from './AssetsPanel'
 import CropPanel from './CropPanel'
 import TemplatesPanel from './TemplatesPanel'
+import MobilePanels from './MobilePanels'
 
 function MobileEditor({
   buildId,
@@ -11,9 +13,7 @@ function MobileEditor({
   onSelect,
   onChange,
   onAddRect,
-  onAddText,
   onAddAsset,
-  onCropToggle,
   cropActive,
   cropTarget,
   onCropChange,
@@ -27,6 +27,12 @@ function MobileEditor({
   onTimeChange,
   onResetTime
 }) {
+  const [activePanel, setActivePanel] = useState(null)
+
+  const togglePanel = (panel) => {
+    setActivePanel((prev) => (prev === panel ? null : panel))
+  }
+
   return (
     <div className="editor-shell mobile">
       <header className="mobile-header">
@@ -57,8 +63,6 @@ function MobileEditor({
           onClose={onCloseCrop}
         />
       </main>
-      <TemplatesPanel onApplyTemplate={onApplyTemplate} compact />
-      <AssetsPanel onAddAsset={onAddAsset} compact />
       <Timeline
         duration={duration}
         currentTime={currentTime}
@@ -69,13 +73,46 @@ function MobileEditor({
         items={timelineItems}
         className="timeline-compact"
       />
+      <MobilePanels activePanel={activePanel} onClose={() => setActivePanel(null)}>
+        {activePanel === 'templates' && (
+          <TemplatesPanel onApplyTemplate={onApplyTemplate} compact />
+        )}
+        {activePanel === 'assets' && <AssetsPanel onAddAsset={onAddAsset} compact />}
+        {activePanel === 'crop' && (
+          <CropPanel
+            open
+            target={cropTarget}
+            duration={duration}
+            onChange={onCropChange}
+            onClose={onCloseCrop}
+          />
+        )}
+      </MobilePanels>
       <nav className="mobile-bottom-nav" aria-label="Quick actions">
-        <button type="button" className="icon-button">🗑</button>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => togglePanel('templates')}
+        >
+          ✦
+        </button>
         <button type="button" className="add-button" onClick={onAddRect}>
           +
         </button>
-        <button type="button" className="icon-button">⚡</button>
-        <button type="button" className="icon-button" onClick={onAddText}>T</button>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => togglePanel('assets')}
+        >
+          ▦
+        </button>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => togglePanel('crop')}
+        >
+          ⤧
+        </button>
       </nav>
     </div>
   )
