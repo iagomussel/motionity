@@ -1,4 +1,63 @@
+import { useEffect } from 'react'
+
+const LEGACY_SCRIPTS = [
+  'https://cdn.jsdelivr.net/npm/@simonwep/selection-js/lib/selection.min.js',
+  'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js',
+  '/js/libraries/sortable.min.js',
+  '/js/libraries/range-slider.min.js',
+  '/js/libraries/jquery.nice-select.min.js',
+  'https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/460/fabric.min.js',
+  '/js/libraries/anime.min.js',
+  '/js/libraries/ffmpeg.min.js',
+  'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js',
+  '/js/init.js',
+  '/js/ui.js',
+  '/js/align.js',
+  '/js/converter.js',
+  '/js/database.js',
+  '/js/lottie.js',
+  '/js/text.js',
+  '/js/recorder.js',
+  '/js/functions.js',
+  '/js/events.js'
+]
+
 function LegacyEditor() {
+  useEffect(() => {
+    if (window.__legacyScriptsLoaded) return
+    let cancelled = false
+
+    const loadScript = (src) =>
+      new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = src
+        script.async = false
+        script.onload = resolve
+        script.onerror = reject
+        document.body.appendChild(script)
+      })
+
+    const loadAll = async () => {
+      try {
+        for (const src of LEGACY_SCRIPTS) {
+          if (cancelled) return
+          // eslint-disable-next-line no-await-in-loop
+          await loadScript(src)
+        }
+        window.__legacyScriptsLoaded = true
+      } catch (err) {
+        console.error('Legacy script load failed', err)
+      }
+    }
+
+    loadAll()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <div
       className="legacy-root"
