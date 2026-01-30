@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Stage, Layer, Rect, Text, Transformer, Circle } from 'react-konva'
+import { Stage, Layer, Rect, Text, Transformer, Circle, Image as KonvaImage } from 'react-konva'
 
 function useSize(ref) {
   const [size, setSize] = useState({ width: 800, height: 500 })
@@ -17,6 +17,72 @@ function useSize(ref) {
   }, [ref])
 
   return size
+}
+
+function useImage(source) {
+  const [image, setImage] = useState(null)
+
+  useEffect(() => {
+    if (!source) {
+      setImage(null)
+      return undefined
+    }
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.src = source
+    const handleLoad = () => setImage(img)
+    img.addEventListener('load', handleLoad)
+    return () => {
+      img.removeEventListener('load', handleLoad)
+    }
+  }, [source])
+
+  return image
+}
+
+function ImageNode({ obj, onSelect, onChange, registerRef }) {
+  const image = useImage(obj.src)
+  const cropWidth = obj.cropWidth ?? obj.width
+  const cropHeight = obj.cropHeight ?? obj.height
+
+  return (
+    <KonvaImage
+      ref={registerRef}
+      image={image}
+      x={obj.x}
+      y={obj.y}
+      width={obj.width}
+      height={obj.height}
+      rotation={obj.rotation}
+      crop={{
+        x: obj.cropX ?? 0,
+        y: obj.cropY ?? 0,
+        width: cropWidth,
+        height: cropHeight
+      }}
+      visible={obj.visible}
+      draggable
+      onClick={() => onSelect(obj.id)}
+      onTap={() => onSelect(obj.id)}
+      onDragEnd={(e) => {
+        onChange(obj.id, { x: e.target.x(), y: e.target.y() })
+      }}
+      onTransformEnd={(e) => {
+        const node = e.target
+        const scaleX = node.scaleX()
+        const scaleY = node.scaleY()
+        node.scaleX(1)
+        node.scaleY(1)
+        onChange(obj.id, {
+          x: node.x(),
+          y: node.y(),
+          width: Math.max(40, node.width() * scaleX),
+          height: Math.max(40, node.height() * scaleY),
+          rotation: node.rotation()
+        })
+      }}
+    />
+  )
 }
 
 function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
@@ -83,6 +149,19 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
             fill="#0B1220"
           />
           {objects.map((obj) => {
+            if (obj.type === 'image') {
+              return (
+                <ImageNode
+                  key={obj.id}
+                  obj={obj}
+                  onSelect={onSelect}
+                  onChange={onChange}
+                  registerRef={(node) => {
+                    if (node) shapeRefs.current[obj.id] = node
+                  }}
+                />
+              )
+            }
             if (obj.type === 'text') {
               return (
                 <Text
@@ -98,6 +177,7 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
                   fill={obj.fill}
                   draggable
                   rotation={obj.rotation}
+                  visible={obj.visible}
                   onClick={() => onSelect(obj.id)}
                   onTap={() => onSelect(obj.id)}
                   onDragEnd={(e) => {
@@ -133,6 +213,7 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
                   fill={obj.fill}
                   draggable
                   rotation={obj.rotation}
+                  visible={obj.visible}
                   onClick={() => onSelect(obj.id)}
                   onTap={() => onSelect(obj.id)}
                   onDragEnd={(e) => {
@@ -159,24 +240,25 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
               )
             }
             return (
-              <Rect
-                key={obj.id}
-                ref={(node) => {
-                  if (node) shapeRefs.current[obj.id] = node
-                }}
-                x={obj.x}
-                y={obj.y}
-                width={obj.width}
-                height={obj.height}
-                fill={obj.fill}
-                draggable
-                rotation={obj.rotation}
-                cornerRadius={8}
-                onClick={() => onSelect(obj.id)}
-                onTap={() => onSelect(obj.id)}
-                onDragEnd={(e) => {
-                  onChange(obj.id, { x: e.target.x(), y: e.target.y() })
-                }}
+                <Rect
+                  key={obj.id}
+                  ref={(node) => {
+                    if (node) shapeRefs.current[obj.id] = node
+                  }}
+                  x={obj.x}
+                  y={obj.y}
+                  width={obj.width}
+                  height={obj.height}
+                  fill={obj.fill}
+                  draggable
+                  rotation={obj.rotation}
+                  cornerRadius={8}
+                  visible={obj.visible}
+                  onClick={() => onSelect(obj.id)}
+                  onTap={() => onSelect(obj.id)}
+                  onDragEnd={(e) => {
+                    onChange(obj.id, { x: e.target.x(), y: e.target.y() })
+                  }}
                 onTransformEnd={(e) => {
                   const node = e.target
                   const scaleX = node.scaleX()

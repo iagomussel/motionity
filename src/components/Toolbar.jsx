@@ -3,7 +3,9 @@ function Toolbar({
   onAddText,
   onAddImage,
   onDuplicate,
-  onDelete
+  onDelete,
+  onCropToggle,
+  cropActive
 }) {
   return (
     <div className="toolbar" role="toolbar" aria-label="Editor tools">
@@ -18,6 +20,14 @@ function Toolbar({
       <button type="button" className="toolbar-button" onClick={onAddImage}>
         <img src="/assets/image.svg" alt="" />
         <span>Image</span>
+      </button>
+      <button
+        type="button"
+        className={`toolbar-button ${cropActive ? 'active' : ''}`}
+        onClick={onCropToggle}
+      >
+        <img src="/assets/crop-icon.svg" alt="" />
+        <span>Crop</span>
       </button>
       <button type="button" className="toolbar-button" onClick={onDuplicate}>
         <img src="/assets/repeat.svg" alt="" />

@@ -2,6 +2,7 @@ import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import Toolbar from './Toolbar'
 import AssetsPanel from './AssetsPanel'
+import CropPanel from './CropPanel'
 
 function DesktopEditor({
   buildId,
@@ -14,6 +15,11 @@ function DesktopEditor({
   onAddImage,
   onDuplicate,
   onDelete,
+  onCropToggle,
+  cropActive,
+  cropTarget,
+  onCropChange,
+  onCloseCrop,
   timelineItems,
   duration,
   currentTime,
@@ -34,6 +40,8 @@ function DesktopEditor({
           onAddRect={onAddRect}
           onAddText={onAddText}
           onAddImage={onAddImage}
+          onCropToggle={onCropToggle}
+          cropActive={cropActive}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
         />
@@ -47,6 +55,13 @@ function DesktopEditor({
             onSelect={onSelect}
             onChange={onChange}
             onDropAsset={onAddAsset}
+          />
+          <CropPanel
+            open={cropActive}
+            target={cropTarget}
+            duration={duration}
+            onChange={onCropChange}
+            onClose={onCloseCrop}
           />
         </div>
       </main>

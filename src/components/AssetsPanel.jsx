@@ -19,6 +19,14 @@ const ASSET_CATEGORIES = [
       { id: 'badge', label: 'Badge', type: 'rect', fill: '#f97316' },
       { id: 'note', label: 'Note', type: 'rect', fill: '#facc15' }
     ]
+  },
+  {
+    id: 'photos',
+    label: 'Photos',
+    items: [
+      { id: 'beach', label: 'Beach', type: 'image', src: '/assets/beach.png' },
+      { id: 'forest', label: 'Forest', type: 'image', src: '/assets/forest.png' }
+    ]
   }
 ]
 

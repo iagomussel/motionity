@@ -37,6 +37,8 @@ function createRect(id) {
     height: 100,
     fill: '#3B82F6',
     rotation: 0,
+    trimStart: 0,
+    trimEnd: DEFAULT_DURATION,
   }
   return {
     ...base,
@@ -55,7 +57,9 @@ function createText(id) {
     text: 'Edit me',
     fontSize: 24,
     fill: '#E2E8F0',
-    rotation: 0
+    rotation: 0,
+    trimStart: 0,
+    trimEnd: DEFAULT_DURATION,
   }
   return {
     ...base,
@@ -71,7 +75,32 @@ function createCircle(id) {
     y: 180,
     radius: 60,
     fill: '#8B5CF6',
-    rotation: 0
+    rotation: 0,
+    trimStart: 0,
+    trimEnd: DEFAULT_DURATION,
+  }
+  return {
+    ...base,
+    keyframes: [{ time: 0, props: buildSnapshot(base) }]
+  }
+}
+
+function createImage(id, src) {
+  const base = {
+    id,
+    type: 'image',
+    x: 160,
+    y: 140,
+    width: 220,
+    height: 140,
+    rotation: 0,
+    src,
+    cropX: 0,
+    cropY: 0,
+    cropWidth: 220,
+    cropHeight: 140,
+    trimStart: 0,
+    trimEnd: DEFAULT_DURATION,
   }
   return {
     ...base,
@@ -120,6 +149,7 @@ function Editor() {
   const [objects, setObjects] = useState(() => [createRect('rect-1')])
   const [selectedId, setSelectedId] = useState('rect-1')
   const [duration] = useState(DEFAULT_DURATION)
+  const [cropActive, setCropActive] = useState(false)
   const { currentTime, isPlaying, toggle, seek } = usePlayback({
     duration
   })
@@ -148,16 +178,9 @@ function Editor() {
   const handleAddImage = () => {
     let createdId = null
     setObjects((prev) => {
-      const nextId = `rect-${prev.length + 1}`
+      const nextId = `image-${prev.length + 1}`
       createdId = nextId
-      const imageRect = createRect(nextId)
-      return [
-        ...prev,
-        {
-          ...imageRect,
-          fill: '#22c55e'
-        }
-      ]
+      return [...prev, createImage(nextId, '/assets/beach.png')]
     })
     if (createdId) setSelectedId(createdId)
   }
@@ -174,6 +197,8 @@ function Editor() {
           created = createText(nextId)
         } else if (asset.type === 'circle') {
           created = createCircle(nextId)
+        } else if (asset.type === 'image') {
+          created = createImage(nextId, asset.src)
         } else {
           created = createRect(nextId)
         }
@@ -258,12 +283,42 @@ function Editor() {
 
   const displayObjects = useMemo(
     () =>
-      objects.map((obj) => ({
-        ...obj,
-        ...buildInterpolatedProps(obj.keyframes, currentTime)
-      })),
-    [objects, currentTime]
+      objects.map((obj) => {
+        const props = buildInterpolatedProps(obj.keyframes, currentTime)
+        const trimStart = obj.trimStart ?? 0
+        const trimEnd = obj.trimEnd ?? duration
+        const visible = currentTime >= trimStart && currentTime <= trimEnd
+        return {
+          ...obj,
+          ...props,
+          visible
+        }
+      }),
+    [objects, currentTime, duration]
   )
+
+  const cropTarget = useMemo(
+    () => objects.find((obj) => obj.id === selectedId) ?? null,
+    [objects, selectedId]
+  )
+
+  const handleCropChange = useCallback((next) => {
+    if (!selectedId) return
+    setObjects((prev) =>
+      prev.map((obj) => {
+        if (obj.id !== selectedId) return obj
+        return {
+          ...obj,
+          cropX: next.cropX,
+          cropY: next.cropY,
+          cropWidth: next.cropWidth,
+          cropHeight: next.cropHeight,
+          trimStart: Math.max(0, Math.min(next.trimStart, duration)),
+          trimEnd: Math.max(0, Math.min(next.trimEnd, duration))
+        }
+      })
+    )
+  }, [selectedId, duration])
 
   const sharedProps = {
     buildId: import.meta.env.VITE_BUILD_ID,
@@ -277,6 +332,11 @@ function Editor() {
     onAddAsset: handleAddAsset,
     onDuplicate: handleDuplicate,
     onDelete: handleDelete,
+    onCropToggle: () => setCropActive((prev) => !prev),
+    cropActive,
+    cropTarget,
+    onCropChange: handleCropChange,
+    onCloseCrop: () => setCropActive(false),
     timelineItems,
     duration,
     currentTime,
