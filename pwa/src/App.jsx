@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import desktopMarkup from './legacy/desktop.html?raw'
 import mobileMarkup from './legacy/mobile.html?raw'
 import { loadLegacyScripts } from './legacy/loadLegacy'
@@ -9,20 +9,31 @@ function App() {
     return window.matchMedia('(max-width: 768px)').matches
   })
   const markup = useMemo(() => (isMobile ? mobileMarkup : desktopMarkup), [isMobile])
+  const mountedRef = useRef(false)
 
   useEffect(() => {
-    let cancelled = false
     document.body.className = isMobile ? 'mobile-page' : ''
-    loadLegacyScripts().catch((err) => {
-      if (!cancelled) {
+    const startButton = document.getElementById('start-editing')
+    const onStart = async () => {
+      if (mountedRef.current) return
+      mountedRef.current = true
+      document.body.classList.add('app-editing')
+      try {
+        await loadLegacyScripts()
+      } catch (err) {
         // eslint-disable-next-line no-console
         console.error(err)
       }
-    })
-    return () => {
-      cancelled = true
     }
-  }, [])
+    if (startButton) {
+      startButton.addEventListener('click', onStart)
+    }
+    return () => {
+      if (startButton) {
+        startButton.removeEventListener('click', onStart)
+      }
+    }
+  }, [isMobile])
 
   return (
     <div

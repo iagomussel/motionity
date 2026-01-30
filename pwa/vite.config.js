@@ -9,12 +9,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Motionity',
-        short_name: 'Motionity',
+        name: 'VeloMotion',
+        short_name: 'VeloMotion',
         start_url: '/',
         display: 'standalone',
-        background_color: '#000000',
-        theme_color: '#000000',
+        background_color: '#0F172A',
+        theme_color: '#0F172A',
         icons: [
           {
             src: '/favicon.ico',

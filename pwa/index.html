@@ -1,29 +1,173 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>VeloMotion | The Open-Source Motion Engine</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/nice-select.css" />
-    <link rel="stylesheet" href="/range-slider.min.css" />
-    <link rel="stylesheet" href="/magic-check.min.css" />
-    <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"
-    />
-    <title>Motionity</title>
-  </head>
-  <body>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        body { font-family: 'Inter', sans-serif; }
+        .hero-gradient { background: radial-gradient(circle at top right, #007AFF10, transparent); }
+    </style>
+
+</head>
+
+<body class="bg-[#0F172A] text-slate-100 selection:bg-[#007AFF] selection:text-white hero-gradient min-h-screen">
+
+    <div id="landing-root">
+        <header class="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-10 h-10 fill-[#007AFF]">
+
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 273 219">
+
+                        <path d="M127.9 23.3c-4.1 1.3-9.5 3.5-12 4.9-6.2 3.7-12.9 8.7-12.9 9.6 0 .5 1.1 1.4 2.4 2.1 2.1 1.2 2.9.9 8.9-3.2 19.6-13.4 43.2-13.5 62.7-.2 7.7 5.2 13.9 12.4 17.7 20.6 2.6 5.3 3.1 5.8 6 5.8 3 .1 3.2-.1 2.3-2.3-7.1-18.8-23.9-33.5-43.2-38.1-9.4-2.2-22.8-1.8-31.9.8M83.6 33.7c-.3.4-.6 3.6-.6 7.2 0 11.2 3.8 16.4 17.5 23.8 3.3 1.8 5.6 3.3 5.1 3.3-1.3 0-14.2-4.7-17.6-6.5-3.6-1.9-3.8-1-1.5 5.6 3.1 8.6 9 13.7 20.3 17.4 2.9.9 5.2 1.9 5 2.1-.5.4-11-1.2-13.9-2.1-2.8-.9-2.4.6 1.5 5.7 2.5 3.2 5.7 5.7 11.5 8.7 6.3 3.3 8.1 4.7 8.1 6.3 0 3.3-3.4 9.5-10.4 18.8-3.5 4.7-6.3 8.6-6.1 8.8.9.9 14.6-7.1 16.3-9.5 1.6-2.2 3.4-3.2 7.9-4.1 16.2-3.4 28.1-14.3 36.2-33.1 4.6-10.7 6.2-12.8 10.9-14.8 1.8-.8 3.2-1.8 3-2.2-.2-.5-2.5-2.7-5.1-5-3.9-3.3-5.6-4.1-8.8-4.1-5.7 0-10.8 3-16.4 9.7-2.7 3.2-5.2 6.2-5.5 6.6-.4.4-2.6-2.2-5-5.8-5.3-8.2-7.6-10.1-19.7-16.6-11.6-6.2-22.2-12.8-27.9-17.5-2.3-1.8-4.4-3-4.8-2.7"/>
+
+                        <path d="M83.4 73.1c-1.4 2.3-.7 18.3 1 24.9 2.3 8.7 7 18.1 11.9 23.6 4 4.5 4 4.5 6 2.6 1.9-2 1.9-2-1.7-6.7-7-9.3-11.6-22.1-11.6-32.7 0-4.4-.6-6.5-2.4-9.3-1.6-2.4-2.7-3.2-3.2-2.4m99.6 13c0 11.3.2 13 1.5 12.5C187.9 97.3 205 86.8 205 86c0-.9-19.7-13-21.2-13-.4 0-.8 5.9-.8 13.1m10 26.6c-4.9 9.3-17.2 19.4-28.2 23.3-3.1 1.1-8.8 2.4-12.6 3-8.8 1.4-21.1-.5-29.6-4.5-4.9-2.3-6.2-2.6-8.3-1.6-3.5 1.6-2.6 3 4.1 6.4 23 11.6 51.7 6.9 70.2-11.7 6.1-6.1 13.4-16.3 13.4-18.9 0-.4-1.5-.7-3.3-.7-2.8 0-3.5.6-5.7 4.7M87 183v14h5v-28h-5zm-45.5-11.3c.3 1 2.3 7.1 4.3 13.6l3.7 11.8 3.4-.3c3.3-.3 3.4-.4 7.1-10.8 5.5-15.7 5.5-16 2.5-16-2.9 0-3.3.7-6.8 12.5-1.4 4.5-2.7 7.3-3 6.5s-1.8-5.4-3.2-10.3c-2.6-8.5-2.7-8.7-5.7-8.7-2.4 0-2.9.3-2.3 1.7m80.2-1.1c-.4.4-.7 6.5-.7 13.6V197h6.2l-.8-9.2c-.3-5.1-.3-9 .1-8.5.5.4 2 4.4 3.5 9 2.1 6.5 3 8.3 4.7 8.5 1.8.3 2.5-.9 5.1-8.5l3-8.8.1 8.7.1 8.8h6.1l-.3-13.3-.3-13.2-3.7-.3-3.7-.3-2.9 9.3c-1.7 5.4-3.2 8.7-3.6 7.8-.3-.8-1.6-4.9-2.9-9-2.3-7.3-2.4-7.5-5.8-7.8-1.9-.2-3.8 0-4.2.4m57.3 3.8c0 1.5-.7 2.6-2 2.9-1.1.3-2 1.3-2 2.2s.9 1.9 2 2.2c1.7.5 2 1.4 2 6.3 0 8.1.5 9 5.1 9 3.2 0 3.9-.4 3.9-1.9 0-1-.9-2.1-2-2.4-1.7-.4-2-1.4-2-6.1 0-4.9.2-5.6 2-5.6 1.3 0 2-.7 2-2s-.7-2-2-2c-1.5 0-2-.7-2-2.5 0-2-.5-2.5-2.5-2.5s-2.5.5-2.5 2.4m-110.7 4.1c-1.3.9-2.7 3.3-3.3 5.5-2.3 8.6 4.7 15.6 13.3 13 2.7-.8 3.7-1.6 3.5-2.8-.3-1.3-1.2-1.6-4.6-1.4-4 .4-7.2-.9-7.2-2.9 0-.5 2.9-.9 6.5-.9 6.3 0 6.5-.1 6.5-2.5 0-3.3-2.5-8.1-4.5-8.9-2.9-1.1-8-.6-10.2.9m32 0c-5 3.5-4.7 13.9.4 17.2 3.1 2 9.6 2.1 11.9.3 4.9-4.2 5.4-12.1.9-16.6-2.9-2.9-9.8-3.3-13.2-.9m9.1 4.1c3.3 3.2 1.3 10.4-2.9 10.4s-5.9-5.6-2.9-9.8c1.8-2.6 3.7-2.8 5.8-.6m47.1-3.2c-5.5 5.5-3.6 14.7 3.7 17.4 3.3 1.3 4.1 1.2 7.5-.4 4.7-2.3 6.7-7.3 5.2-12.8-1.3-4.6-4.2-6.6-9.7-6.6-3.2 0-4.9.6-6.7 2.4m9.9 3.2c3.3 3.2 1.3 10.4-2.9 10.4-2.7 0-4.5-2.5-4.5-6.4 0-2.7 2.3-5.6 4.5-5.6.7 0 2.1.7 2.9 1.6m25.4-4.9c-.2.5-.2 5 0 10 .3 9.1.4 9.3 2.8 9.3s2.4-.1 2.4-10 0-10-2.4-10c-1.4 0-2.6.3-2.8.7m12.7 1.6c-2 1.6-2.8 3.5-3.2 6.8-.4 3.8-.1 5 2.1 7.6 3.1 3.7 6.7 4.8 11.1 3.3 4.3-1.4 6.5-4.9 6.5-10.3 0-3.4-.6-5-2.6-7.1-3.5-3.5-10.1-3.6-13.9-.3m10.1 4.2c3.4 5.3-1.6 12.2-6.2 8.5-1.7-1.5-1.9-8.1-.2-9.8 1.9-1.9 4.6-1.4 6.4 1.3m11.1-5.8c-.2.5-.3 3.7-.2 7.3.3 12.1.3 12 3 12 2.4 0 2.5-.2 2.5-6.4 0-4.5.5-6.9 1.6-8 3.8-3.9 6.4-.3 6.4 9 0 5.1.1 5.4 2.5 5.4 2.5 0 2.5-.1 2.5-7.8 0-9.4-1.5-12.2-6.4-12.2-1.9 0-3.9.7-4.7 1.6-1.1 1.4-1.3 1.4-2.1 0-.9-1.6-4.4-2.2-5.1-.9"/>
+
+                    </svg>
+
+                </div>
+
+                <span class="text-xl font-extrabold tracking-tight"><span class="text-[#007AFF]">Velo</span>Motion</span>
+
+            </div>
+
+            <nav class="hidden md:flex gap-8 text-sm font-semibold text-slate-400">
+
+                <a href="#" class="hover:text-white transition">Funcionalidades</a>
+
+                <a href="#" class="hover:text-white transition">Docker Setup</a>
+
+                <a href="#" class="hover:text-white transition">Comunidade</a>
+
+            </nav>
+
+            <a href="#github" class="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-full text-sm font-bold transition">GitHub</a>
+
+        </header>
+
+
+
+        <main class="max-w-4xl mx-auto px-6 pt-20 pb-32 text-center">
+
+            <div class="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest text-[#00D4FF] uppercase bg-[#00D4FF] bg-opacity-10 rounded-full">
+
+                Fork Otimizado & Responsivo
+
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-8 tracking-tighter">
+
+                Animação profissional, <br> <span class="text-[#007AFF]">em qualquer lugar.</span>
+
+            </h1>
+
+            <p class="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+
+                O VeloMotion é um editor de gráficos em movimento open-source focado em performance e usabilidade mobile. Edite no browser, tablet ou desktop.
+
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+
+                <button id="start-editing" class="bg-[#007AFF] hover:bg-blue-600 w-full md:w-auto px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-1">
+
+                    Iniciar Edição
+
+                </button>
+
+                <button class="bg-slate-800 hover:bg-slate-700 w-full md:w-auto px-8 py-4 rounded-xl font-bold text-lg transition-all">
+
+                    Ver Documentação
+
+                </button>
+
+            </div>
+
+        </main>
+
+
+
+        <section class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 pb-32">
+
+            <div class="p-8 bg-slate-900 rounded-2xl border border-slate-800 hover:border-[#007AFF50] transition group">
+
+                <div class="w-12 h-12 bg-[#007AFF10] rounded-lg mb-6 flex items-center justify-center fill-[#007AFF] group-hover:scale-110 transition">
+
+                    <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+
+                </div>
+
+                <h3 class="text-xl font-bold mb-3">Adaptive UI</h3>
+
+                <p class="text-slate-400 leading-relaxed">Interface que se adapta perfeitamente ao mobile. Use gestos para editar seus keyframes.</p>
+
+            </div>
+
+            
+
+            <div class="p-8 bg-slate-900 rounded-2xl border border-slate-800 hover:border-[#007AFF50] transition group">
+
+                <div class="w-12 h-12 bg-[#007AFF10] rounded-lg mb-6 flex items-center justify-center fill-[#007AFF] group-hover:scale-110 transition">
+
+                    <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l4-2.18L12 3z"/></svg>
+
+                </div>
+
+                <h3 class="text-xl font-bold mb-3">Docker Ready</h3>
+
+                <p class="text-slate-400 leading-relaxed">Instalação via Docker otimizada para WSL e ambientes de desenvolvimento locais.</p>
+
+            </div>
+
+
+
+            <div class="p-8 bg-slate-900 rounded-2xl border border-slate-800 hover:border-[#007AFF50] transition group">
+
+                <div class="w-12 h-12 bg-[#007AFF10] rounded-lg mb-6 flex items-center justify-center fill-[#007AFF] group-hover:scale-110 transition">
+
+                    <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+
+                </div>
+
+                <h3 class="text-xl font-bold mb-3">High Performance</h3>
+
+                <p class="text-slate-400 leading-relaxed">Engine de renderização leve que utiliza Web Workers para não travar sua interface.</p>
+
+            </div>
+
+        </section>
+
+
+
+        <footer class="max-w-7xl mx-auto px-6 py-12 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
+
+            <p>© 2026 VeloMotion. Baseado no projeto open-source Motionity.</p>
+
+            <div class="flex gap-6 mt-4 md:mt-0 font-medium">
+
+                <a href="#" class="hover:text-[#007AFF]">GitHub</a>
+
+                <a href="#" class="hover:text-[#007AFF]">Twitter</a>
+
+                <a href="#" class="hover:text-[#007AFF]">Docs</a>
+
+            </div>
+
+        </footer>
+    </div>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
+
 </html>
