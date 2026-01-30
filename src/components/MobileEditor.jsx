@@ -1,0 +1,60 @@
+import CanvasStage from './CanvasStage'
+import Timeline from './Timeline'
+
+function MobileEditor({
+  objects,
+  selectedId,
+  onSelect,
+  onChange,
+  onAddRect,
+  onAddText,
+  timelineItems,
+  duration,
+  currentTime,
+  isPlaying,
+  onPlayToggle,
+  onTimeChange,
+  onResetTime
+}) {
+  return (
+    <div className="editor-shell mobile">
+      <header className="mobile-header">
+        <button type="button" className="icon-button" aria-label="Close">
+          ✕
+        </button>
+        <div className="mobile-title">Speed</div>
+        <button type="button" className="icon-button primary" aria-label="Confirm">
+          ✓
+        </button>
+      </header>
+      <main className="editor-main mobile-main">
+        <CanvasStage
+          objects={objects}
+          selectedId={selectedId}
+          onSelect={onSelect}
+          onChange={onChange}
+        />
+      </main>
+      <Timeline
+        duration={duration}
+        currentTime={currentTime}
+        isPlaying={isPlaying}
+        onPlayToggle={onPlayToggle}
+        onTimeChange={onTimeChange}
+        onReset={onResetTime}
+        items={timelineItems}
+        className="timeline-compact"
+      />
+      <nav className="mobile-bottom-nav" aria-label="Quick actions">
+        <button type="button" className="icon-button">🗑</button>
+        <button type="button" className="add-button" onClick={onAddRect}>
+          +
+        </button>
+        <button type="button" className="icon-button">⚡</button>
+        <button type="button" className="icon-button" onClick={onAddText}>T</button>
+      </nav>
+    </div>
+  )
+}
+
+export default MobileEditor

@@ -7,7 +7,8 @@ function Timeline({
   items,
   isPlaying = false,
   onPlayToggle = () => {},
-  onReset = () => {}
+  onReset = () => {},
+  className = ''
 }) {
   const containerRef = useRef(null)
   const ticks = useMemo(() => {
@@ -24,7 +25,7 @@ function Timeline({
   }
 
   return (
-    <section className="timeline" aria-label="Timeline">
+    <section className={`timeline ${className}`.trim()} aria-label="Timeline">
       <div className="timeline-header">
         <div className="timeline-title">
           <span>Timeline</span>

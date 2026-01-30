@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
-import CanvasStage from './CanvasStage'
-import Timeline from './Timeline'
+import DesktopEditor from './DesktopEditor'
+import MobileEditor from './MobileEditor'
 import usePlayback from '../hooks/usePlayback'
+import useMediaQuery from '../hooks/useMediaQuery'
+import useViewportUnit from '../hooks/useViewportUnit'
 
 const DEFAULT_DURATION = 15
 
@@ -36,12 +38,14 @@ function createText(id) {
 }
 
 function Editor() {
+  useViewportUnit()
   const [objects, setObjects] = useState(() => [createRect('rect-1')])
   const [selectedId, setSelectedId] = useState('rect-1')
   const [duration] = useState(DEFAULT_DURATION)
   const { currentTime, isPlaying, toggle, seek } = usePlayback({
     duration
   })
+  const isMobile = useMediaQuery('(max-width: 900px)')
 
   const handleAddRect = () => {
     setObjects((prev) => {
@@ -96,40 +100,27 @@ function Editor() {
     [objects]
   )
 
-  return (
-    <div className="editor-shell">
-      <header className="editor-header">
-        <div className="brand">
-          <span className="brand-accent">Velo</span>Motion
-        </div>
-        <div className="editor-actions">
-          <button type="button" onClick={handleAddRect}>
-            Add Rect
-          </button>
-          <button type="button" onClick={handleAddText}>
-            Add Text
-          </button>
-        </div>
-      </header>
-      <main className="editor-main">
-        <CanvasStage
-          objects={objects}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onChange={updateObject}
-        />
-      </main>
-      <Timeline
-        duration={duration}
-        currentTime={currentTime}
-        isPlaying={isPlaying}
-        onPlayToggle={toggle}
-        onTimeChange={seek}
-        onReset={() => seek(0)}
-        items={timelineItems}
-      />
-    </div>
-  )
+  const sharedProps = {
+    objects,
+    selectedId,
+    onSelect: handleSelect,
+    onChange: updateObject,
+    onAddRect: handleAddRect,
+    onAddText: handleAddText,
+    timelineItems,
+    duration,
+    currentTime,
+    isPlaying,
+    onPlayToggle: toggle,
+    onTimeChange: seek,
+    onResetTime: () => seek(0)
+  }
+
+  if (isMobile) {
+    return <MobileEditor {...sharedProps} />
+  }
+
+  return <DesktopEditor {...sharedProps} />
 }
 
 export default Editor
