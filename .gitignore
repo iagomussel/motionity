@@ -1,2 +1,4 @@
+node_modules
+dist
 pwa/node_modules
 pwa/dist

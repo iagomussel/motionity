@@ -12,7 +12,11 @@ function App() {
   const mountedRef = useRef(false)
 
   useEffect(() => {
-    document.body.className = isMobile ? 'mobile-page' : ''
+    if (isMobile) {
+      document.body.classList.add('mobile-page')
+    } else {
+      document.body.classList.remove('mobile-page')
+    }
     const startButton = document.getElementById('start-editing')
     const onStart = async () => {
       if (mountedRef.current) return
