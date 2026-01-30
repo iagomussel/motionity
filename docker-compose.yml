@@ -5,6 +5,8 @@ services:
       - "8080:80"
     depends_on:
       - api
+    environment:
+      - VITE_API_URL=http://api:3001
 
   api:
     build: ./api
