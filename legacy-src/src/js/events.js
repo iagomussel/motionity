@@ -1,6 +1,10 @@
 $(document).ready(function () {
   // An object is being moved in the canvas
   canvas.on('object:moving', function (e) {
+    if (e.target && e.target.isEditing) {
+      e.target.exitEditing();
+      canvas.renderAll();
+    }
     e.target.hasControls = false;
     centerLines(e);
     if (cropping) {
@@ -36,6 +40,10 @@ $(document).ready(function () {
 
   // An object is being scaled in the canvas
   canvas.on('object:scaling', function (e) {
+    if (e.target && e.target.isEditing) {
+      e.target.exitEditing();
+      canvas.renderAll();
+    }
     e.target.hasControls = false;
     centerLines(e);
     if (cropping) {
@@ -53,6 +61,10 @@ $(document).ready(function () {
 
   // An object is being resized in the canvas
   canvas.on('object:resizing', function (e) {
+    if (e.target && e.target.isEditing) {
+      e.target.exitEditing();
+      canvas.renderAll();
+    }
     e.target.hasControls = false;
     centerLines(e);
     if (cropping) {
@@ -70,6 +82,10 @@ $(document).ready(function () {
 
   // An object is being rotated in the canvas
   canvas.on('object:rotating', function (e) {
+    if (e.target && e.target.isEditing) {
+      e.target.exitEditing();
+      canvas.renderAll();
+    }
     if (e.e.shiftKey) {
       canvas.getActiveObject().snapAngle = 15;
     } else {
@@ -106,6 +122,10 @@ $(document).ready(function () {
 
   // A selection has been updated in the canvas
   canvas.on('selection:updated', function (e) {
+    if (canvas.getActiveObject() && canvas.getActiveObject().isEditing) {
+      canvas.getActiveObject().exitEditing();
+      canvas.renderAll();
+    }
     updatePanel(true);
     updatePanelValues();
     updateSelection(e);
@@ -114,6 +134,10 @@ $(document).ready(function () {
 
   // A selection has been made in the canvas
   canvas.on('selection:created', function (e) {
+    if (canvas.getActiveObject() && canvas.getActiveObject().isEditing) {
+      canvas.getActiveObject().exitEditing();
+      canvas.renderAll();
+    }
     shiftx = canvas.getActiveObject().get('left');
     shifty = canvas.getActiveObject().get('top');
     if (!editingpanel) {
