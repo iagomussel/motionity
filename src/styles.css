@@ -2813,6 +2813,13 @@ layer:nth-child(even) .properties {
 #mobile-library-bar {
   display: none;
 }
+@media only screen and (min-width: 769px) {
+  #mobile-toolbar,
+  #mobile-sheet,
+  #mobile-library-bar {
+    display: none !important;
+  }
+}
 @media only screen and (max-width: 768px) {
   :root {
     --mobile-toolbar-height: 64px;

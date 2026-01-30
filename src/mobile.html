@@ -10,13 +10,6 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
         <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
-        <script>
-          if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-            if (!window.location.pathname.endsWith('/mobile.html')) {
-              window.location.replace('mobile.html');
-            }
-          }
-        </script>
 				<!-- Primary Meta Tags -->
 <title>Motionity - The web-based motion graphics editor for everyone</title>
 <meta name="title" content="Motionity - The web-based motion graphics editor for everyone">
@@ -36,7 +29,7 @@
 <meta property="twitter:description" content="Create animated videos for free with Motionity, an open source motion graphics editor with keyframing, masking, filters, text animations, and more. ">
 <meta property="twitter:image" content="https://motionity.app/meta.png">
     </head>
-    <body draggable="false">
+    <body draggable="false" class="mobile-page">
 			<div id="disclaimer">
 				<div id="optimized">
 					<div id="emoji">🤔</div>
