@@ -1,5 +1,6 @@
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
+import AssetsPanel from './AssetsPanel'
 
 function MobileEditor({
   objects,
@@ -8,6 +9,7 @@ function MobileEditor({
   onChange,
   onAddRect,
   onAddText,
+  onAddAsset,
   timelineItems,
   duration,
   currentTime,
@@ -33,8 +35,10 @@ function MobileEditor({
           selectedId={selectedId}
           onSelect={onSelect}
           onChange={onChange}
+          onDropAsset={onAddAsset}
         />
       </main>
+      <AssetsPanel onAddAsset={onAddAsset} compact />
       <Timeline
         duration={duration}
         currentTime={currentTime}

@@ -1,6 +1,7 @@
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import Toolbar from './Toolbar'
+import AssetsPanel from './AssetsPanel'
 
 function DesktopEditor({
   objects,
@@ -18,7 +19,8 @@ function DesktopEditor({
   isPlaying,
   onPlayToggle,
   onTimeChange,
-  onResetTime
+  onResetTime,
+  onAddAsset
 }) {
   return (
     <div className="editor-shell">
@@ -34,13 +36,17 @@ function DesktopEditor({
           onDelete={onDelete}
         />
       </header>
-      <main className="editor-main">
-        <CanvasStage
-          objects={objects}
-          selectedId={selectedId}
-          onSelect={onSelect}
-          onChange={onChange}
-        />
+      <main className="editor-main split">
+        <AssetsPanel onAddAsset={onAddAsset} />
+        <div className="canvas-wrapper">
+          <CanvasStage
+            objects={objects}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            onChange={onChange}
+            onDropAsset={onAddAsset}
+          />
+        </div>
       </main>
       <Timeline
         duration={duration}

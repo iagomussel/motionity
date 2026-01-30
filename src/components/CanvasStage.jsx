@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Stage, Layer, Rect, Text, Transformer } from 'react-konva'
+import { Stage, Layer, Rect, Text, Transformer, Circle } from 'react-konva'
 
 function useSize(ref) {
   const [size, setSize] = useState({ width: 800, height: 500 })
@@ -19,9 +19,10 @@ function useSize(ref) {
   return size
 }
 
-function CanvasStage({ objects, selectedId, onSelect, onChange }) {
+function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
   const containerRef = useRef(null)
   const transformerRef = useRef(null)
+  const stageRef = useRef(null)
   const shapeRefs = useRef({})
   const { width, height } = useSize(containerRef)
 
@@ -38,8 +39,28 @@ function CanvasStage({ objects, selectedId, onSelect, onChange }) {
   }, [selectedId, objects])
 
   return (
-    <div className="canvas-stage" ref={containerRef}>
+    <div
+      className="canvas-stage"
+      ref={containerRef}
+      onDragOver={(event) => {
+        event.preventDefault()
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        if (!onDropAsset) return
+        const data = event.dataTransfer.getData('application/motionity-asset')
+        if (!data) return
+        const asset = JSON.parse(data)
+        const stage = stageRef.current?.getStage()
+        if (!stage) return
+        stage.setPointersPositions(event)
+        const pos = stage.getPointerPosition()
+        if (!pos) return
+        onDropAsset(asset, pos)
+      }}
+    >
       <Stage
+        ref={stageRef}
         width={width}
         height={height}
         onMouseDown={(e) => {
@@ -93,6 +114,44 @@ function CanvasStage({ objects, selectedId, onSelect, onChange }) {
                       y: node.y(),
                       width: Math.max(40, node.width() * scaleX),
                       fontSize: Math.max(8, obj.fontSize * scaleY),
+                      rotation: node.rotation()
+                    })
+                  }}
+                />
+              )
+            }
+            if (obj.type === 'circle') {
+              return (
+                <Circle
+                  key={obj.id}
+                  ref={(node) => {
+                    if (node) shapeRefs.current[obj.id] = node
+                  }}
+                  x={obj.x}
+                  y={obj.y}
+                  radius={obj.radius}
+                  fill={obj.fill}
+                  draggable
+                  rotation={obj.rotation}
+                  onClick={() => onSelect(obj.id)}
+                  onTap={() => onSelect(obj.id)}
+                  onDragEnd={(e) => {
+                    onChange(obj.id, { x: e.target.x(), y: e.target.y() })
+                  }}
+                  onTransformEnd={(e) => {
+                    const node = e.target
+                    const scaleX = node.scaleX()
+                    const scaleY = node.scaleY()
+                    node.scaleX(1)
+                    node.scaleY(1)
+                    const nextRadius = Math.max(
+                      10,
+                      node.radius() * Math.max(scaleX, scaleY)
+                    )
+                    onChange(obj.id, {
+                      x: node.x(),
+                      y: node.y(),
+                      radius: nextRadius,
                       rotation: node.rotation()
                     })
                   }}

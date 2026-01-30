@@ -11,6 +11,7 @@ const SNAPSHOT_FIELDS = [
   'y',
   'width',
   'height',
+  'radius',
   'rotation',
   'fill',
   'text',
@@ -54,6 +55,22 @@ function createText(id) {
     text: 'Edit me',
     fontSize: 24,
     fill: '#E2E8F0',
+    rotation: 0
+  }
+  return {
+    ...base,
+    keyframes: [{ time: 0, props: buildSnapshot(base) }]
+  }
+}
+
+function createCircle(id) {
+  const base = {
+    id,
+    type: 'circle',
+    x: 220,
+    y: 180,
+    radius: 60,
+    fill: '#8B5CF6',
     rotation: 0
   }
   return {
@@ -145,6 +162,36 @@ function Editor() {
     if (createdId) setSelectedId(createdId)
   }
 
+  const handleAddAsset = useCallback(
+    (asset, position) => {
+      if (!asset) return
+      let createdId = null
+      setObjects((prev) => {
+        const nextId = `${asset.type}-${prev.length + 1}`
+        createdId = nextId
+        let created
+        if (asset.type === 'text') {
+          created = createText(nextId)
+        } else if (asset.type === 'circle') {
+          created = createCircle(nextId)
+        } else {
+          created = createRect(nextId)
+        }
+        if (asset.fill) created.fill = asset.fill
+        if (position?.x != null && position?.y != null) {
+          created.x = position.x
+          created.y = position.y
+        }
+        created.keyframes = [
+          { time: 0, props: buildSnapshot(created) }
+        ]
+        return [...prev, created]
+      })
+      if (createdId) setSelectedId(createdId)
+    },
+    []
+  )
+
   const handleDuplicate = useCallback(() => {
     let createdId = null
     setObjects((prev) => {
@@ -226,6 +273,7 @@ function Editor() {
     onAddRect: handleAddRect,
     onAddText: handleAddText,
     onAddImage: handleAddImage,
+    onAddAsset: handleAddAsset,
     onDuplicate: handleDuplicate,
     onDelete: handleDelete,
     timelineItems,
