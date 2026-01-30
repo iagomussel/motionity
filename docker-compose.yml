@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001

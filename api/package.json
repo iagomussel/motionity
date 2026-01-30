@@ -1,0 +1,12 @@
+{
+  "name": "velomotion-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal API for server-side actions",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}
