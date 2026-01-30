@@ -1,7 +1,7 @@
-import Editor from './components/Editor'
+import LegacyEditor from './components/LegacyEditor'
 
 function App() {
-  return <Editor />
+  return <LegacyEditor />
 }
 
 export default App
