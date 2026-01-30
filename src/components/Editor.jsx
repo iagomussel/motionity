@@ -6,9 +6,28 @@ import useMediaQuery from '../hooks/useMediaQuery'
 import useViewportUnit from '../hooks/useViewportUnit'
 
 const DEFAULT_DURATION = 15
+const SNAPSHOT_FIELDS = [
+  'x',
+  'y',
+  'width',
+  'height',
+  'rotation',
+  'fill',
+  'text',
+  'fontSize'
+]
+
+function buildSnapshot(obj) {
+  return SNAPSHOT_FIELDS.reduce((acc, key) => {
+    if (obj[key] !== undefined) {
+      acc[key] = obj[key]
+    }
+    return acc
+  }, {})
+}
 
 function createRect(id) {
-  return {
+  const base = {
     id,
     type: 'rect',
     x: 120,
@@ -17,12 +36,15 @@ function createRect(id) {
     height: 100,
     fill: '#3B82F6',
     rotation: 0,
-    keyframes: [0]
+  }
+  return {
+    ...base,
+    keyframes: [{ time: 0, props: buildSnapshot(base) }]
   }
 }
 
 function createText(id) {
-  return {
+  const base = {
     id,
     type: 'text',
     x: 180,
@@ -32,9 +54,48 @@ function createText(id) {
     text: 'Edit me',
     fontSize: 24,
     fill: '#E2E8F0',
-    rotation: 0,
-    keyframes: [0]
+    rotation: 0
   }
+  return {
+    ...base,
+    keyframes: [{ time: 0, props: buildSnapshot(base) }]
+  }
+}
+
+function interpolateValue(start, end, t) {
+  return start + (end - start) * t
+}
+
+function buildInterpolatedProps(keyframes, time) {
+  if (!keyframes?.length) return {}
+  const sorted = [...keyframes].sort((a, b) => a.time - b.time)
+  if (time <= sorted[0].time) return sorted[0].props
+  if (time >= sorted[sorted.length - 1].time) {
+    return sorted[sorted.length - 1].props
+  }
+
+  const nextIndex = sorted.findIndex((frame) => frame.time >= time)
+  const prevFrame = sorted[Math.max(0, nextIndex - 1)]
+  const nextFrame = sorted[nextIndex]
+  if (!prevFrame || !nextFrame) return prevFrame?.props ?? {}
+  if (prevFrame.time === nextFrame.time) return prevFrame.props
+
+  const t = (time - prevFrame.time) / (nextFrame.time - prevFrame.time)
+  const merged = {}
+  const keys = new Set([
+    ...Object.keys(prevFrame.props),
+    ...Object.keys(nextFrame.props)
+  ])
+  keys.forEach((key) => {
+    const start = prevFrame.props[key]
+    const end = nextFrame.props[key]
+    if (typeof start === 'number' && typeof end === 'number') {
+      merged[key] = interpolateValue(start, end, t)
+    } else {
+      merged[key] = start ?? end
+    }
+  })
+  return merged
 }
 
 function Editor() {
@@ -63,28 +124,28 @@ function Editor() {
     setSelectedId(`text-${objects.length + 1}`)
   }
 
-  const addKeyframe = useCallback(
-    (id) => {
-      setObjects((prev) =>
-        prev.map((obj) => {
-          if (obj.id !== id) return obj
-          if (obj.keyframes.includes(currentTime)) return obj
-          return {
-            ...obj,
-            keyframes: [...obj.keyframes, currentTime].sort((a, b) => a - b)
-          }
-        })
-      )
-    },
-    [currentTime]
-  )
-
   const updateObject = useCallback((id, attrs) => {
     setObjects((prev) =>
-      prev.map((obj) => (obj.id === id ? { ...obj, ...attrs } : obj))
+      prev.map((obj) => {
+        if (obj.id !== id) return obj
+        const updated = { ...obj, ...attrs }
+        const snapshot = buildSnapshot(updated)
+        const existingIndex = updated.keyframes.findIndex(
+          (frame) => frame.time === currentTime
+        )
+        let nextKeyframes = updated.keyframes
+        if (existingIndex >= 0) {
+          nextKeyframes = updated.keyframes.map((frame, index) =>
+            index === existingIndex ? { time: frame.time, props: snapshot } : frame
+          )
+        } else {
+          nextKeyframes = [...updated.keyframes, { time: currentTime, props: snapshot }]
+        }
+        nextKeyframes.sort((a, b) => a.time - b.time)
+        return { ...updated, keyframes: nextKeyframes }
+      })
     )
-    addKeyframe(id)
-  }, [addKeyframe])
+  }, [currentTime])
 
   const handleSelect = useCallback((id) => {
     setSelectedId(id)
@@ -95,13 +156,22 @@ function Editor() {
       objects.map((obj) => ({
         id: obj.id,
         label: obj.type === 'text' ? `Text ${obj.id}` : `Rect ${obj.id}`,
-        keyframes: obj.keyframes
+        keyframes: obj.keyframes.map((frame) => frame.time)
       })),
     [objects]
   )
 
+  const displayObjects = useMemo(
+    () =>
+      objects.map((obj) => ({
+        ...obj,
+        ...buildInterpolatedProps(obj.keyframes, currentTime)
+      })),
+    [objects, currentTime]
+  )
+
   const sharedProps = {
-    objects,
+    objects: displayObjects,
     selectedId,
     onSelect: handleSelect,
     onChange: updateObject,
