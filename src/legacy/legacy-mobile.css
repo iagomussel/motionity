@@ -1,4 +1,11 @@
 @media (max-width: 900px) {
+  :root {
+    --toolbar-width: 78px;
+    --browser-width: 0px;
+    --properties-width: 0px;
+    --timeline-height: 220px;
+  }
+
   #disclaimer {
     display: none !important;
   }
@@ -16,6 +23,11 @@
     height: 100vh;
     width: 78px;
     z-index: 20;
+  }
+
+  #browser,
+  #properties {
+    display: none !important;
   }
 
   #browser {
@@ -39,11 +51,18 @@
 
   #canvas-area {
     position: fixed;
-    left: 78px;
+    left: var(--toolbar-width);
     top: 0;
-    width: calc(100vw - 78px);
-    height: calc(100vh - 220px);
+    width: calc(100vw - var(--toolbar-width));
+    height: calc(100vh - var(--timeline-height));
     z-index: 10;
+  }
+
+  #canvas-wrap,
+  #canvas,
+  #canvas-2 {
+    width: 100%;
+    height: 100%;
   }
 
   #toolbar-2 {
