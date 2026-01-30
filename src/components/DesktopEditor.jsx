@@ -3,6 +3,7 @@ import Timeline from './Timeline'
 import Toolbar from './Toolbar'
 import AssetsPanel from './AssetsPanel'
 import CropPanel from './CropPanel'
+import TemplatesPanel from './TemplatesPanel'
 
 function DesktopEditor({
   buildId,
@@ -20,6 +21,7 @@ function DesktopEditor({
   cropTarget,
   onCropChange,
   onCloseCrop,
+  onApplyTemplate,
   timelineItems,
   duration,
   currentTime,
@@ -47,7 +49,10 @@ function DesktopEditor({
         />
       </header>
       <main className="editor-main split">
-        <AssetsPanel onAddAsset={onAddAsset} />
+        <div className="side-panels">
+          <AssetsPanel onAddAsset={onAddAsset} />
+          <TemplatesPanel onApplyTemplate={onApplyTemplate} />
+        </div>
         <div className="canvas-wrapper">
           <CanvasStage
             objects={objects}

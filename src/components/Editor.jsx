@@ -108,6 +108,84 @@ function createImage(id, src) {
   }
 }
 
+function createObjectFromTemplate(id, item) {
+  if (item.type === 'text') {
+    const base = {
+      id,
+      type: 'text',
+      x: item.x ?? 180,
+      y: item.y ?? 220,
+      width: item.width ?? 200,
+      height: item.height ?? 40,
+      text: item.text ?? 'Text',
+      fontSize: item.fontSize ?? 24,
+      fill: item.fill ?? '#E2E8F0',
+      rotation: item.rotation ?? 0,
+      trimStart: 0,
+      trimEnd: DEFAULT_DURATION,
+    }
+    return {
+      ...base,
+      keyframes: [{ time: 0, props: buildSnapshot(base) }]
+    }
+  }
+  if (item.type === 'circle') {
+    const base = {
+      id,
+      type: 'circle',
+      x: item.x ?? 220,
+      y: item.y ?? 180,
+      radius: item.radius ?? 60,
+      fill: item.fill ?? '#8B5CF6',
+      rotation: item.rotation ?? 0,
+      trimStart: 0,
+      trimEnd: DEFAULT_DURATION,
+    }
+    return {
+      ...base,
+      keyframes: [{ time: 0, props: buildSnapshot(base) }]
+    }
+  }
+  if (item.type === 'image') {
+    const base = {
+      id,
+      type: 'image',
+      x: item.x ?? 160,
+      y: item.y ?? 140,
+      width: item.width ?? 220,
+      height: item.height ?? 140,
+      rotation: item.rotation ?? 0,
+      src: item.src ?? '/assets/beach.png',
+      cropX: 0,
+      cropY: 0,
+      cropWidth: item.width ?? 220,
+      cropHeight: item.height ?? 140,
+      trimStart: 0,
+      trimEnd: DEFAULT_DURATION,
+    }
+    return {
+      ...base,
+      keyframes: [{ time: 0, props: buildSnapshot(base) }]
+    }
+  }
+  const base = {
+    id,
+    type: 'rect',
+    x: item.x ?? 120,
+    y: item.y ?? 120,
+    width: item.width ?? 160,
+    height: item.height ?? 100,
+    fill: item.fill ?? '#3B82F6',
+    rotation: item.rotation ?? 0,
+    trimStart: 0,
+    trimEnd: DEFAULT_DURATION,
+  }
+  return {
+    ...base,
+    keyframes: [{ time: 0, props: buildSnapshot(base) }]
+  }
+}
+
 function interpolateValue(start, end, t) {
   return start + (end - start) * t
 }
@@ -320,6 +398,18 @@ function Editor() {
     )
   }, [selectedId, duration])
 
+  const handleApplyTemplate = useCallback((template) => {
+    if (!template?.objects?.length) return
+    setObjects((prev) => {
+      const next = [...prev]
+      template.objects.forEach((item, index) => {
+        const nextId = `${item.type}-${prev.length + index + 1}`
+        next.push(createObjectFromTemplate(nextId, item))
+      })
+      return next
+    })
+  }, [])
+
   const sharedProps = {
     buildId: import.meta.env.VITE_BUILD_ID,
     objects: displayObjects,
@@ -337,6 +427,7 @@ function Editor() {
     cropTarget,
     onCropChange: handleCropChange,
     onCloseCrop: () => setCropActive(false),
+    onApplyTemplate: handleApplyTemplate,
     timelineItems,
     duration,
     currentTime,

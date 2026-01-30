@@ -2,6 +2,7 @@ import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import AssetsPanel from './AssetsPanel'
 import CropPanel from './CropPanel'
+import TemplatesPanel from './TemplatesPanel'
 
 function MobileEditor({
   buildId,
@@ -17,6 +18,7 @@ function MobileEditor({
   cropTarget,
   onCropChange,
   onCloseCrop,
+  onApplyTemplate,
   timelineItems,
   duration,
   currentTime,
@@ -55,6 +57,7 @@ function MobileEditor({
           onClose={onCloseCrop}
         />
       </main>
+      <TemplatesPanel onApplyTemplate={onApplyTemplate} compact />
       <AssetsPanel onAddAsset={onAddAsset} compact />
       <Timeline
         duration={duration}
