@@ -1,3 +1,152 @@
+var localOnlyMode = false;
+var originalFetch = window.fetch;
+var originalXHROpen = XMLHttpRequest.prototype.open;
+var originalXHRSend = XMLHttpRequest.prototype.send;
+
+function isLocalOnlyMode() {
+  return localOnlyMode === true;
+}
+
+function isSameOrigin(url) {
+  try {
+    var parsed = new URL(url, window.location.origin);
+    return parsed.origin === window.location.origin;
+  } catch (err) {
+    return true;
+  }
+}
+
+function isAssetUrl(url) {
+  var assetExtensions = [
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.webp',
+    '.svg',
+    '.mp3',
+    '.wav',
+    '.mp4',
+    '.webm',
+    '.json',
+    '.css',
+    '.js',
+    '.woff',
+    '.woff2',
+    '.ttf'
+  ];
+  try {
+    var parsed = new URL(url, window.location.origin);
+    var lower = parsed.pathname.toLowerCase();
+    return assetExtensions.some(function (ext) {
+      return lower.endsWith(ext);
+    });
+  } catch (err) {
+    return false;
+  }
+}
+
+function isBlockedExternal(url) {
+  try {
+    var parsed = new URL(url, window.location.origin);
+    if (parsed.hostname.indexOf('pixabay.com') !== -1 && parsed.pathname.indexOf('/api') !== -1) {
+      return true;
+    }
+    return false;
+  } catch (err) {
+    return false;
+  }
+}
+
+function isAllowedExternal(url) {
+  var allowedOrigins = [
+    'https://cdn.jsdelivr.net',
+    'https://ajax.googleapis.com',
+    'https://cdnjs.cloudflare.com',
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com',
+    'https://unpkg.com',
+    'https://archive.org'
+  ];
+  try {
+    var parsed = new URL(url, window.location.origin);
+    if (allowedOrigins.indexOf(parsed.origin) === -1) {
+      return false;
+    }
+    if (isBlockedExternal(url)) {
+      return false;
+    }
+    return isAssetUrl(url);
+  } catch (err) {
+    return false;
+  }
+}
+
+function shouldAllowRequest(url) {
+  if (url == null) {
+    return true;
+  }
+  var str = url.toString();
+  if (str.startsWith('blob:') || str.startsWith('data:')) {
+    return true;
+  }
+  if (isSameOrigin(str)) {
+    return true;
+  }
+  if (isBlockedExternal(str)) {
+    return false;
+  }
+  return isAllowedExternal(str);
+}
+
+function applyLocalOnlyMode(enabled) {
+  localOnlyMode = enabled === true;
+  try {
+    localStorage.setItem('localOnlyMode', localOnlyMode ? 'true' : 'false');
+  } catch (err) {}
+  $('#local-only-checkbox').prop('checked', localOnlyMode);
+  $('body').toggleClass('local-only', localOnlyMode);
+  if (localOnlyMode) {
+    $('#pixabay').addClass('hide-pixabay');
+  } else {
+    $('#pixabay').removeClass('hide-pixabay');
+  }
+}
+
+window.fetch = function (url, options) {
+  if (isLocalOnlyMode() && !shouldAllowRequest(url)) {
+    return Promise.reject(
+      new Error('Blocked by local-only mode: ' + url.toString())
+    );
+  }
+  return originalFetch.apply(this, arguments);
+};
+
+XMLHttpRequest.prototype.open = function (method, url) {
+  this._localOnlyUrl = url;
+  this._localOnlyMethod = method;
+  return originalXHROpen.apply(this, arguments);
+};
+
+XMLHttpRequest.prototype.send = function () {
+  if (isLocalOnlyMode() && !shouldAllowRequest(this._localOnlyUrl)) {
+    this.abort();
+    return;
+  }
+  return originalXHRSend.apply(this, arguments);
+};
+
+$(document).ready(function () {
+  var stored = false;
+  try {
+    stored = localStorage.getItem('localOnlyMode') === 'true';
+  } catch (err) {}
+  applyLocalOnlyMode(stored);
+  $(document).on('change', '#local-only-checkbox', function () {
+    applyLocalOnlyMode($(this).is(':checked'));
+  });
+});
+
 // Update panel (when selecting / de-selecting objects)
 function updatePanel(selection) {
   if (!selection) {
@@ -2706,6 +2855,9 @@ function fancyTimeFormat(duration) {
 }
 
 function loadMoreMedia() {
+  if (isLocalOnlyMode()) {
+    return;
+  }
   var value = $('#browser-search input').val();
   if (value != '' && page != false) {
     page += 1;
@@ -2778,6 +2930,14 @@ function loadMoreMedia() {
 function search() {
   page = 1;
   var value = $('#browser-search input').val();
+  if (isLocalOnlyMode() && ($('#image-tool').hasClass('tool-active') || $('#video-tool').hasClass('tool-active'))) {
+    $('#images-grid').html('');
+    $('#landing').removeClass('hide-landing');
+    $('#shapes-cont').html(
+      "<div id='no-results'>Local-only mode is enabled. External search is disabled.</div>"
+    );
+    return;
+  }
   if ($('#image-tool').hasClass('tool-active')) {
     var URL =
       'https://pixabay.com/api/?key=' +
@@ -2942,6 +3102,13 @@ function search() {
 }
 
 function searchCategory() {
+  if (isLocalOnlyMode()) {
+    $('#images-grid').html('');
+    $('#shapes-cont').html(
+      "<div id='no-results'>Local-only mode is enabled. External search is disabled.</div>"
+    );
+    return;
+  }
   $('#browser-search input').val($(this).attr('data-name'));
   $('#delete-search').addClass('show-delete');
   search();

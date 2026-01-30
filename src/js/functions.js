@@ -561,7 +561,7 @@ function downloadRecording(chunks) {
     $('#download-real').removeClass('downloading');
     updateRecordCanvas();
   } else if ($('input[name=radio]:checked').val() == 'mp4') {
-    type = 'video/mp4';
+    convertStreams(new Blob(chunks, { type: 'video/webm' }), 'mp4');
   } else {
     convertStreams(new Blob(chunks, { type: 'video/webm' }), 'gif');
   }
