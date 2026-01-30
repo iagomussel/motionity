@@ -266,6 +266,7 @@ function Editor() {
   )
 
   const sharedProps = {
+    buildId: import.meta.env.VITE_BUILD_ID,
     objects: displayObjects,
     selectedId,
     onSelect: handleSelect,

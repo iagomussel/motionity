@@ -4,6 +4,7 @@ import Toolbar from './Toolbar'
 import AssetsPanel from './AssetsPanel'
 
 function DesktopEditor({
+  buildId,
   objects,
   selectedId,
   onSelect,
@@ -28,6 +29,7 @@ function DesktopEditor({
         <div className="brand">
           <span className="brand-accent">Velo</span>Motion
         </div>
+        {buildId && <span className="build-badge">build {buildId}</span>}
         <Toolbar
           onAddRect={onAddRect}
           onAddText={onAddText}

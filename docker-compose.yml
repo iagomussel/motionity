@@ -7,6 +7,7 @@ services:
       - api
     environment:
       - VITE_API_URL=http://api:3001
+      - VITE_BUILD_ID=local
 
   api:
     build: ./api

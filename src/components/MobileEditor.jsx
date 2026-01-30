@@ -3,6 +3,7 @@ import Timeline from './Timeline'
 import AssetsPanel from './AssetsPanel'
 
 function MobileEditor({
+  buildId,
   objects,
   selectedId,
   onSelect,
@@ -24,7 +25,10 @@ function MobileEditor({
         <button type="button" className="icon-button" aria-label="Close">
           ✕
         </button>
-        <div className="mobile-title">Speed</div>
+        <div className="mobile-title">
+          Speed
+          {buildId && <span className="build-badge">build {buildId}</span>}
+        </div>
         <button type="button" className="icon-button primary" aria-label="Confirm">
           ✓
         </button>

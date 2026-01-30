@@ -67,6 +67,23 @@ button:hover {
   color: #3b82f6;
 }
 
+.build-badge {
+  margin-left: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f8fafc;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.mobile-title .build-badge {
+  margin-left: 8px;
+  font-size: 10px;
+}
+
 .editor-actions {
   display: flex;
   gap: 12px;
