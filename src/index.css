@@ -90,6 +90,9 @@ button:hover {
   letter-spacing: 0.08em;
   background: transparent;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .toolbar-button:hover {
@@ -98,6 +101,12 @@ button:hover {
 
 .toolbar-button.danger {
   color: #f87171;
+}
+
+.toolbar-button img {
+  width: 16px;
+  height: 16px;
+  filter: invert(88%);
 }
 
 .editor-main {
