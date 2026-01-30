@@ -6,6 +6,7 @@ import CropPanel from './CropPanel'
 import TemplatesPanel from './TemplatesPanel'
 import MobilePanels from './MobilePanels'
 import OptionsPanel from './OptionsPanel'
+import SideMenu from './SideMenu'
 
 function MobileEditor({
   buildId,
@@ -40,6 +41,14 @@ function MobileEditor({
   return (
     <div className="editor-shell mobile">
       <header className="mobile-header">
+        <button
+          type="button"
+          className="icon-button small"
+          onClick={() => togglePanel('menu')}
+          aria-label="Open menu"
+        >
+          <img src="/assets/more-options.svg" alt="" />
+        </button>
         <div className="mobile-brand">
           <div className="brand-icon">
             <img src="/assets/zap.svg" alt="" />
@@ -85,6 +94,7 @@ function MobileEditor({
         position={panelPosition}
         onClose={() => setActivePanel(null)}
       >
+        {activePanel === 'menu' && <SideMenu />}
         {activePanel === 'templates' && (
           <TemplatesPanel onApplyTemplate={onApplyTemplate} compact />
         )}

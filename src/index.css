@@ -558,6 +558,12 @@ button:hover {
   display: none;
 }
 
+.icon-button.small img {
+  width: 16px;
+  height: 16px;
+  filter: invert(85%);
+}
+
 .export-button {
   padding: 6px 14px;
   border-radius: 999px;
@@ -685,6 +691,67 @@ button:hover {
   border: none;
   background: transparent;
   padding: 0;
+}
+
+.side-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.side-menu-header {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.side-menu-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.side-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+  font-size: 13px;
+  justify-content: space-between;
+}
+
+.side-menu-trigger img {
+  width: 18px;
+  height: 18px;
+  filter: invert(75%);
+}
+
+.side-menu-trigger span {
+  flex: 1;
+  text-align: left;
+}
+
+.side-menu-trigger .chevron {
+  color: #64748b;
+}
+
+.side-menu-panel {
+  padding: 8px 12px 12px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.side-menu-placeholder {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.1);
 }
 
 .mobile-panel-sheet .crop-panel {
