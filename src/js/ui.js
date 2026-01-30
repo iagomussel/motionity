@@ -1755,7 +1755,8 @@ var mobileLayout = {
   sheetMode: 'layers',
   assetsActive: false,
   assetsCategory: 'All',
-  assetsQuery: ''
+  assetsQuery: '',
+  scrubberTimer: null
 };
 
 function storeHome($el) {
@@ -1796,6 +1797,7 @@ function applyMobileLayout() {
     );
     mobileLayout.active = true;
     syncMobileLibrarySelect();
+    startMobileScrubber();
   } else if (!isMobile && mobileLayout.active) {
     restoreElement($('#layer-list'), mobileLayout.layerHome);
     restoreElement($('#properties'), mobileLayout.propertiesHome);
@@ -1807,6 +1809,7 @@ function applyMobileLayout() {
       .removeClass('mobile-library-open');
     $('#mobile-library').removeClass('mobile-toggle-active');
     setMobileAssetsActive(false);
+    stopMobileScrubber();
     mobileLayout.active = false;
   }
 }
@@ -1853,6 +1856,96 @@ function setMobileAssetsActive(active) {
     mobileLayout.assetsCategory = 'All';
     mobileLayout.assetsQuery = '';
   }
+}
+
+function isMobileQuickActionsActive() {
+  return mobileLayout.active && $('body').hasClass('mobile-page');
+}
+
+function updateMobileQuickActions() {
+  if (!isMobileQuickActionsActive()) {
+    return;
+  }
+  var selection = canvas && canvas.getActiveObject
+    ? canvas.getActiveObject()
+    : null;
+  var hasSelection = !!selection;
+  $('body').toggleClass('mobile-selection', hasSelection);
+  var $groupBtn = $('#mobile-action-group');
+  if (!hasSelection) {
+    $groupBtn.text('Group');
+    $('#mobile-action-lock').text('Lock');
+    return;
+  }
+  if (selection.type === 'group') {
+    $groupBtn.text('Ungroup');
+  } else if (selection.type === 'activeSelection') {
+    $groupBtn.text('Group');
+  } else {
+    $groupBtn.text('Group');
+  }
+  var lockLabel = selection.selectable === false ? 'Unlock' : 'Lock';
+  $('#mobile-action-lock').text(lockLabel);
+  $('#mobile-action-snap').toggleClass(
+    'active',
+    typeof snapEnabled === 'undefined' ? true : !!snapEnabled
+  );
+}
+
+function startMobileScrubber() {
+  if (mobileLayout.scrubberTimer) {
+    return;
+  }
+  mobileLayout.scrubberTimer = setInterval(updateMobileScrubberUI, 200);
+}
+
+function stopMobileScrubber() {
+  if (mobileLayout.scrubberTimer) {
+    clearInterval(mobileLayout.scrubberTimer);
+    mobileLayout.scrubberTimer = null;
+  }
+}
+
+function updateMobileScrubberUI() {
+  if (!isMobileQuickActionsActive()) {
+    return;
+  }
+  if (typeof timelinetime === 'undefined') {
+    return;
+  }
+  var max = Math.max(0, Math.round(timelinetime));
+  var value = Math.max(0, Math.round(currenttime || 0));
+  $('#mobile-mini-scrubber-range').attr('max', max).val(value);
+  var totalSeconds = value / 1000;
+  var minutes = Math.floor(totalSeconds / 60);
+  var seconds = Math.floor(totalSeconds % 60);
+  $('#mobile-mini-time').text(
+    ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2)
+  );
+}
+
+function setMobileScrubTime(value) {
+  if (typeof timelinetime === 'undefined') {
+    return;
+  }
+  paused = true;
+  currenttime = Math.min(Math.max(0, value), timelinetime);
+  if (currenttime % 16.666 != 0) {
+    currenttime = Math.ceil(currenttime / 16.666) * 16.666;
+  }
+  if (typeof renderTime === 'function') {
+    renderTime();
+  }
+  if ($('#seekbar').length) {
+    $('#seekbar').offset({
+      left:
+        offset_left +
+        $('#inner-timeline').offset().left +
+        currenttime / timelinetime
+    });
+  }
+  animate(false, currenttime);
+  updatePanelValues();
 }
 
 function renderMobileAssetsPanel() {
@@ -2000,6 +2093,159 @@ $(document).on('click', '.mobile-assets-chip', function () {
   mobileLayout.assetsCategory = $(this).attr('data-category');
   renderMobileAssetsPanel();
 });
+
+function toggleSnapGuides() {
+  if (typeof snapEnabled === 'undefined') {
+    window.snapEnabled = true;
+  }
+  snapEnabled = !snapEnabled;
+  $('#mobile-action-snap').toggleClass('active', !!snapEnabled);
+}
+
+function duplicateSelection() {
+  var selection = canvas.getActiveObject();
+  if (!selection) {
+    return;
+  }
+  clipboard = selection;
+  cliptype = 'object';
+  copyObject();
+}
+
+function toggleLockSelection() {
+  var selection = canvas.getActiveObject();
+  if (!selection) {
+    return;
+  }
+  var $layer = $(".layer[data-object='" + selection.get('id') + "']");
+  if ($layer.length) {
+    $layer.find('.lock').trigger('click');
+  } else {
+    selection.selectable = !selection.selectable;
+    if (!selection.selectable) {
+      canvas.discardActiveObject();
+    }
+    canvas.renderAll();
+  }
+  updateMobileQuickActions();
+}
+
+function toggleGroupSelection() {
+  var selection = canvas.getActiveObject();
+  if (!selection) {
+    return;
+  }
+  if (selection.type === 'group') {
+    unGroup(selection);
+  } else if (selection.type === 'activeSelection') {
+    group();
+  }
+  updateMobileQuickActions();
+}
+
+function flipSelection(axis) {
+  var selection = canvas.getActiveObject();
+  if (!selection) {
+    return;
+  }
+  if (selection.type === 'activeSelection') {
+    selection._objects.forEach(function (obj) {
+      obj.set(axis, !obj.get(axis));
+      obj.setCoords();
+    });
+    reselect(selection);
+  } else {
+    selection.set(axis, !selection.get(axis));
+    selection.setCoords();
+  }
+  canvas.renderAll();
+  save();
+  updatePanelValues();
+}
+
+function alignSelection(type) {
+  var selection = canvas.getActiveObject();
+  if (!selection) {
+    return;
+  }
+  if (selection.type === 'activeSelection') {
+    var tempselection = selection;
+    canvas.discardActiveObject();
+    tempselection._objects.forEach(function (object) {
+      alignControls(object, type);
+      canvas.renderAll();
+      newKeyframe('left', object, currenttime, object.get('left'), true);
+      newKeyframe('top', object, currenttime, object.get('top'), true);
+    });
+    reselect(tempselection);
+  } else {
+    alignControls(selection, type);
+    canvas.renderAll();
+    newKeyframe('left', selection, currenttime, selection.get('left'), true);
+    newKeyframe('top', selection, currenttime, selection.get('top'), true);
+  }
+}
+
+$(document).on('click', '#mobile-action-duplicate', duplicateSelection);
+$(document).on('click', '#mobile-action-group', toggleGroupSelection);
+$(document).on('click', '#mobile-action-lock', toggleLockSelection);
+$(document).on('click', '#mobile-action-flip-h', function () {
+  flipSelection('flipX');
+});
+$(document).on('click', '#mobile-action-flip-v', function () {
+  flipSelection('flipY');
+});
+$(document).on('click', '#mobile-action-align-left', function () {
+  alignSelection('align-left');
+});
+$(document).on('click', '#mobile-action-align-center', function () {
+  alignSelection('align-center-h');
+  alignSelection('align-center-v');
+});
+$(document).on('click', '#mobile-action-align-right', function () {
+  alignSelection('align-right');
+});
+$(document).on('click', '#mobile-action-align-top', function () {
+  alignSelection('align-top');
+});
+$(document).on('click', '#mobile-action-align-middle', function () {
+  alignSelection('align-center-v');
+});
+$(document).on('click', '#mobile-action-align-bottom', function () {
+  alignSelection('align-bottom');
+});
+$(document).on('click', '#mobile-action-snap', toggleSnapGuides);
+$(document).on('input', '#mobile-mini-scrubber-range', function () {
+  var value = parseFloat($(this).val());
+  setMobileScrubTime(value);
+});
+
+function initMobileSelectionListeners() {
+  if (!canvas || !canvas.on) {
+    return;
+  }
+  canvas.on('selection:created', updateMobileQuickActions);
+  canvas.on('selection:updated', updateMobileQuickActions);
+  canvas.on('selection:cleared', updateMobileQuickActions);
+  updateMobileQuickActions();
+}
+
+function waitForCanvas() {
+  var tries = 0;
+  var timer = setInterval(function () {
+    if (canvas && canvas.on) {
+      clearInterval(timer);
+      initMobileSelectionListeners();
+      return;
+    }
+    tries += 1;
+    if (tries > 50) {
+      clearInterval(timer);
+    }
+  }, 100);
+}
+
+$(document).ready(waitForCanvas);
 
 function setMobileSelectActive(active) {
   if (active) {

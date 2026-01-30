@@ -78,6 +78,8 @@ function initLines() {
   canvas.add(line_v);
 }
 
+var snapEnabled = true;
+
 function alignControls(object, type) {
   if (type == 'align-top') {
     object.set(
@@ -162,6 +164,12 @@ $(document).on('click', '.align', alignObject);
 
 // Alignment guides
 function centerLines(e) {
+  if (!snapEnabled) {
+    line_h.opacity = 0;
+    line_v.opacity = 0;
+    canvas.renderAll();
+    return;
+  }
   if (!cropping) {
     line_h.opacity = 0;
     line_v.opacity = 0;
