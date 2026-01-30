@@ -1,3 +1,13 @@
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #e2e8f0;
+  background: #0b1220;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #root {
@@ -8,19 +18,148 @@ body,
 }
 
 body {
-  background: #000;
+  background: #0b1220;
 }
 
-#legacy-root {
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+button:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+.editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.editor-header {
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-accent {
+  color: #3b82f6;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.editor-main {
+  flex: 1;
+  padding: 16px;
+}
+
+.canvas-stage {
   width: 100%;
   height: 100%;
-  display: none;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: #0b1220;
 }
 
-body.app-editing #landing-root {
-  display: none;
+.timeline {
+  padding: 12px 24px 18px;
+  background: #0f172a;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
 }
 
-body.app-editing #legacy-root {
-  display: block;
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.timeline-track {
+  position: relative;
+  height: 120px;
+  background: #111827;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  overflow: hidden;
+}
+
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #3b82f6;
+}
+
+.timeline-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.timeline-tick span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.timeline-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 18px;
+}
+
+.timeline-keyframe {
+  position: absolute;
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  background: #a855f7;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .editor-header {
+    flex-direction: column;
+    height: auto;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .editor-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .editor-main {
+    padding: 12px;
+  }
 }
