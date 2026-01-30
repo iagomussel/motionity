@@ -423,6 +423,10 @@
 						<img src="assets/search.svg" alt="">
 						<span>Library</span>
 					</button>
+					<button id="mobile-speed" class="mobile-tool">
+						<img src="assets/zap.svg" alt="">
+						<span>Speed</span>
+					</button>
 					<button id="mobile-undo" class="mobile-tool">
 						<img src="assets/undo.svg" alt="">
 						<span>Undo</span>
@@ -443,6 +447,106 @@
 						<img src="assets/download-icon.svg" alt="">
 						<span>Export</span>
 					</button>
+				</div>
+				<div id="mobile-speed-editor" class="noselect">
+					<div id="speed-editor-header">
+						<button id="speed-editor-close" aria-label="Close speed editor">
+							<img src="assets/close.svg" alt="">
+						</button>
+						<div id="speed-editor-title">Speed</div>
+						<button id="speed-editor-apply" aria-label="Apply speed">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M5 12.5l4.2 4.2L19 7.8" stroke="#0b0f23" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</button>
+					</div>
+					<div id="speed-editor-preview">
+						<div id="speed-editor-video">
+							<img src="assets/background.png" alt="">
+							<button id="speed-editor-play">
+								<img src="assets/play-button.svg" alt="">
+							</button>
+							<button id="speed-editor-fullscreen">
+								<img src="assets/scale.svg" alt="">
+							</button>
+						</div>
+					</div>
+					<div id="speed-editor-actions">
+						<button class="speed-action" id="speed-editor-delete">
+							<img src="assets/delete.svg" alt="">
+							<span>Delete</span>
+						</button>
+						<button class="speed-action speed-action-add" id="speed-editor-add">
+							<span>+</span>
+						</button>
+						<button class="speed-action" id="speed-editor-presets">
+							<img src="assets/filters.svg" alt="">
+							<span>Preset</span>
+						</button>
+					</div>
+					<div id="speed-editor-presets-row">
+						<button class="speed-preset active">
+							<svg viewBox="0 0 64 64" aria-hidden="true">
+								<path d="M4 52 C 14 52, 20 20, 32 20 S 50 52, 60 52" stroke="#8A81FF" stroke-width="4" fill="none"/>
+							</svg>
+						</button>
+						<button class="speed-preset">
+							<svg viewBox="0 0 64 64" aria-hidden="true">
+								<path d="M4 52 C 18 52, 26 52, 32 40 S 46 12, 60 12" stroke="#8A81FF" stroke-width="4" fill="none"/>
+							</svg>
+						</button>
+						<button class="speed-preset">
+							<svg viewBox="0 0 64 64" aria-hidden="true">
+								<path d="M4 12 C 16 12, 22 42, 32 42 S 48 12, 60 12" stroke="#8A81FF" stroke-width="4" fill="none"/>
+							</svg>
+						</button>
+						<button class="speed-preset">
+							<svg viewBox="0 0 64 64" aria-hidden="true">
+								<path d="M4 52 C 18 24, 30 24, 32 24 S 46 24, 60 12" stroke="#8A81FF" stroke-width="4" fill="none"/>
+							</svg>
+						</button>
+						<button class="speed-preset">
+							<svg viewBox="0 0 64 64" aria-hidden="true">
+								<path d="M4 12 C 16 12, 24 52, 32 52 S 46 12, 60 12" stroke="#8A81FF" stroke-width="4" fill="none"/>
+							</svg>
+						</button>
+					</div>
+					<div id="speed-editor-curve">
+						<div class="speed-axis speed-axis-top">8x</div>
+						<div class="speed-axis speed-axis-bottom">1.15x</div>
+						<svg viewBox="0 0 360 220" aria-hidden="true">
+							<g class="speed-grid">
+								<line x1="0" y1="20" x2="360" y2="20"/>
+								<line x1="0" y1="60" x2="360" y2="60"/>
+								<line x1="0" y1="100" x2="360" y2="100"/>
+								<line x1="0" y1="140" x2="360" y2="140"/>
+								<line x1="0" y1="180" x2="360" y2="180"/>
+								<line x1="0" y1="220" x2="360" y2="220"/>
+							</g>
+							<path class="speed-curve" d="M10 190 C 80 180, 120 80, 180 80 S 280 170, 350 40"/>
+							<g class="speed-points">
+								<circle cx="10" cy="190" r="10"/>
+								<circle cx="10" cy="190" r="5" class="inner"/>
+								<circle cx="180" cy="80" r="10"/>
+								<circle cx="180" cy="80" r="5" class="inner"/>
+								<circle cx="350" cy="40" r="10"/>
+								<circle cx="350" cy="40" r="5" class="inner"/>
+							</g>
+							<g class="speed-playhead">
+								<line x1="210" y1="0" x2="210" y2="220"/>
+								<circle cx="210" cy="90" r="6"/>
+							</g>
+						</svg>
+					</div>
+					<div id="speed-editor-filmstrip">
+						<div class="filmstrip-frame"><img src="assets/beach.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/forest.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/nature.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/street.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/office.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/summer.png" alt=""></div>
+						<div class="filmstrip-frame"><img src="assets/rain.png" alt=""></div>
+					</div>
 				</div>
         
         <video id="test-video"></video>

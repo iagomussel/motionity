@@ -1806,7 +1806,8 @@ function applyMobileLayout() {
       .removeClass('mobile-sheet-layers')
       .removeClass('mobile-sheet-properties')
       .removeClass('timeline-collapsed')
-      .removeClass('mobile-library-open');
+      .removeClass('mobile-library-open')
+      .removeClass('mobile-speed-open');
     $('#mobile-library').removeClass('mobile-toggle-active');
     setMobileAssetsActive(false);
     stopMobileScrubber();
@@ -2023,6 +2024,7 @@ function setMobileLibraryOpen(open) {
     return;
   }
   if (open) {
+    $('body').removeClass('mobile-speed-open');
     $('#browser').removeClass('collapsed');
     $('#behind-browser').removeClass('collapsed');
     $('body').addClass('mobile-library-open');
@@ -2034,6 +2036,18 @@ function setMobileLibraryOpen(open) {
   } else {
     $('body').removeClass('mobile-library-open');
     $('#mobile-library').removeClass('mobile-toggle-active');
+  }
+}
+
+function setMobileSpeedOpen(open) {
+  if (!mobileLayout.active) {
+    return;
+  }
+  if (open) {
+    $('body').addClass('mobile-speed-open');
+    setMobileLibraryOpen(false);
+  } else {
+    $('body').removeClass('mobile-speed-open');
   }
 }
 
@@ -2070,6 +2084,20 @@ $(document).on('click', '#mobile-sheet-handle', function () {
 $(document).on('click', '#mobile-library', function () {
   var isOpen = $('body').hasClass('mobile-library-open');
   setMobileLibraryOpen(!isOpen);
+});
+$(document).on('click', '#mobile-speed', function () {
+  var isOpen = $('body').hasClass('mobile-speed-open');
+  setMobileSpeedOpen(!isOpen);
+});
+$(document).on('click', '#speed-editor-close', function () {
+  setMobileSpeedOpen(false);
+});
+$(document).on('click', '#speed-editor-apply', function () {
+  setMobileSpeedOpen(false);
+});
+$(document).on('click', '.speed-preset', function () {
+  $('.speed-preset').removeClass('active');
+  $(this).addClass('active');
 });
 $(document).on('click', '#mobile-library-close', function () {
   setMobileLibraryOpen(false);
