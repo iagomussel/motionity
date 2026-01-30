@@ -257,6 +257,23 @@ function autoSave() {
   }
 }
 
+function forceAutoSave() {
+  if (checkstatus) {
+    try {
+      autoSave();
+    } catch (err) {
+      console.error('Auto-save failed', err);
+    }
+  }
+}
+
+window.addEventListener('pagehide', forceAutoSave);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') {
+    forceAutoSave();
+  }
+});
+
 var isSameSet = function (arr1, arr2) {
   return (
     $(arr1).not(arr2).length === 0 && $(arr2).not(arr1).length === 0
