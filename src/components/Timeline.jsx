@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { Layers, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 
 function Timeline({
   duration,
@@ -8,13 +9,16 @@ function Timeline({
   isPlaying = false,
   onPlayToggle = () => {},
   onReset = () => {},
-  className = ''
+  className = '',
+  variant = 'default',
+  pixelsPerSecond = 80
 }) {
   const containerRef = useRef(null)
   const ticks = useMemo(() => {
     const count = Math.max(1, Math.floor(duration))
     return Array.from({ length: count + 1 }, (_, i) => i)
   }, [duration])
+  const contentWidth = Math.max(480, duration * pixelsPerSecond)
 
   const handlePointer = (event) => {
     const rect = containerRef.current?.getBoundingClientRect()
@@ -26,49 +30,71 @@ function Timeline({
 
   return (
     <section className={`timeline ${className}`.trim()} aria-label="Timeline">
-      <div className="timeline-header">
-        <div className="timeline-title">
-          <span>Timeline</span>
-          <button type="button" className="timeline-control" onClick={onPlayToggle}>
-            {isPlaying ? 'Pause' : 'Play'}
-          </button>
-          <button type="button" className="timeline-control ghost" onClick={onReset}>
-            Reset
+      {variant === 'mobile' ? (
+        <div className="timeline-header mobile">
+          <span className="timeline-time">{currentTime.toFixed(2)}s</span>
+          <div className="timeline-transport">
+            <button type="button" onClick={() => onTimeChange(Math.max(0, currentTime - 1))}>
+              <SkipBack size={16} />
+            </button>
+            <button type="button" className="play" onClick={onPlayToggle}>
+              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+            </button>
+            <button type="button" onClick={() => onTimeChange(Math.min(duration, currentTime + 1))}>
+              <SkipForward size={16} />
+            </button>
+          </div>
+          <button type="button" className="layers-button" onClick={onReset}>
+            <Layers size={16} />
           </button>
         </div>
-        <span>{currentTime.toFixed(2)}s / {duration}s</span>
-      </div>
+      ) : (
+        <div className="timeline-header">
+          <div className="timeline-title">
+            <span>Timeline</span>
+            <button type="button" className="timeline-control" onClick={onPlayToggle}>
+              {isPlaying ? 'Pause' : 'Play'}
+            </button>
+            <button type="button" className="timeline-control ghost" onClick={onReset}>
+              Reset
+            </button>
+          </div>
+          <span>{currentTime.toFixed(2)}s / {duration}s</span>
+        </div>
+      )}
       <div
         className="timeline-track"
         ref={containerRef}
         onMouseDown={handlePointer}
         onTouchStart={(e) => handlePointer(e.touches[0])}
       >
-        <div
-          className="timeline-playhead"
-          style={{ left: `${(currentTime / duration) * 100}%` }}
-        />
-        {ticks.map((tick) => (
+        <div className="timeline-content" style={{ width: contentWidth }}>
           <div
-            key={tick}
-            className="timeline-tick"
-            style={{ left: `${(tick / duration) * 100}%` }}
-          >
-            <span>{tick}s</span>
-          </div>
-        ))}
-        {items.map((item, rowIndex) => (
-          <div key={item.id} className="timeline-row" style={{ top: 32 + rowIndex * 22 }}>
-            {item.keyframes.map((time) => (
-              <div
-                key={`${item.id}-${time}`}
-                className="timeline-keyframe"
-                style={{ left: `${(time / duration) * 100}%` }}
-                title={`${item.label} @ ${time}s`}
-              />
-            ))}
-          </div>
-        ))}
+            className="timeline-playhead"
+            style={{ left: `${(currentTime / duration) * 100}%` }}
+          />
+          {ticks.map((tick) => (
+            <div
+              key={tick}
+              className="timeline-tick"
+              style={{ left: `${(tick / duration) * 100}%` }}
+            >
+              <span>{tick}s</span>
+            </div>
+          ))}
+          {items.map((item, rowIndex) => (
+            <div key={item.id} className="timeline-row" style={{ top: 32 + rowIndex * 22 }}>
+              {item.keyframes.map((time) => (
+                <div
+                  key={`${item.id}-${time}`}
+                  className="timeline-keyframe"
+                  style={{ left: `${(time / duration) * 100}%` }}
+                  title={`${item.label} @ ${time}s`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )

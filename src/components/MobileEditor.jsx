@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { FolderOpen, LayoutTemplate, Sliders, PlusCircle, Zap } from 'lucide-react'
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import AssetsPanel from './AssetsPanel'
 import CropPanel from './CropPanel'
 import TemplatesPanel from './TemplatesPanel'
 import MobilePanels from './MobilePanels'
+import OptionsPanel from './OptionsPanel'
 
 function MobileEditor({
   buildId,
@@ -19,6 +21,7 @@ function MobileEditor({
   onCropChange,
   onCloseCrop,
   onApplyTemplate,
+  onOptionChange,
   timelineItems,
   duration,
   currentTime,
@@ -33,18 +36,22 @@ function MobileEditor({
     setActivePanel((prev) => (prev === panel ? null : panel))
   }
 
+  const panelPosition = activePanel === 'options' ? 'bottom' : 'left'
+
   return (
     <div className="editor-shell mobile">
       <header className="mobile-header">
-        <button type="button" className="icon-button" aria-label="Close">
-          ✕
-        </button>
-        <div className="mobile-title">
-          Speed
-          {buildId && <span className="build-badge">build {buildId}</span>}
+        <div className="mobile-brand">
+          <div className="brand-icon">
+            <Zap size={18} />
+          </div>
+          <div>
+            <div className="mobile-title">VeloMotion</div>
+            {buildId && <span className="build-badge">build {buildId}</span>}
+          </div>
         </div>
-        <button type="button" className="icon-button primary" aria-label="Confirm">
-          ✓
+        <button type="button" className="export-button">
+          Export
         </button>
       </header>
       <main className="editor-main mobile-main">
@@ -72,46 +79,52 @@ function MobileEditor({
         onReset={onResetTime}
         items={timelineItems}
         className="timeline-compact"
+        variant="mobile"
       />
-      <MobilePanels activePanel={activePanel} onClose={() => setActivePanel(null)}>
+      <MobilePanels
+        activePanel={activePanel}
+        position={panelPosition}
+        onClose={() => setActivePanel(null)}
+      >
         {activePanel === 'templates' && (
           <TemplatesPanel onApplyTemplate={onApplyTemplate} compact />
         )}
         {activePanel === 'assets' && <AssetsPanel onAddAsset={onAddAsset} compact />}
-        {activePanel === 'crop' && (
-          <CropPanel
-            open
+        {activePanel === 'options' && (
+          <OptionsPanel
             target={cropTarget}
-            duration={duration}
-            onChange={onCropChange}
-            onClose={onCloseCrop}
+            onApply={onOptionChange}
+            onClose={() => setActivePanel(null)}
           />
         )}
       </MobilePanels>
       <nav className="mobile-bottom-nav" aria-label="Quick actions">
         <button
           type="button"
-          className="icon-button"
+          className={`icon-button ${activePanel === 'templates' ? 'active' : ''}`}
           onClick={() => togglePanel('templates')}
         >
-          ✦
+          <LayoutTemplate size={18} />
+          <span>Templates</span>
         </button>
         <button type="button" className="add-button" onClick={onAddRect}>
-          +
+          <PlusCircle size={26} />
         </button>
         <button
           type="button"
-          className="icon-button"
+          className={`icon-button ${activePanel === 'assets' ? 'active' : ''}`}
           onClick={() => togglePanel('assets')}
         >
-          ▦
+          <FolderOpen size={18} />
+          <span>Assets</span>
         </button>
         <button
           type="button"
-          className="icon-button"
-          onClick={() => togglePanel('crop')}
+          className={`icon-button ${activePanel === 'options' ? 'active' : ''}`}
+          onClick={() => togglePanel('options')}
         >
-          ⤧
+          <Sliders size={18} />
+          <span>Edit</span>
         </button>
       </nav>
     </div>

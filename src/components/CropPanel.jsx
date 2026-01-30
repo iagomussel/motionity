@@ -37,7 +37,7 @@ function CropPanel({
     <div className="crop-panel" role="dialog" aria-label="Crop and trim">
       <div className="crop-panel-header">
         <span>Crop & Trim</span>
-        <button type="button" className="icon-button" onClick={onClose}>
+        <button type="button" className="icon-button small" onClick={onClose}>
           ✕
         </button>
       </div>

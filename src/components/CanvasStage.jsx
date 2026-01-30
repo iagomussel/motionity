@@ -54,6 +54,7 @@ function ImageNode({ obj, onSelect, onChange, registerRef }) {
       width={obj.width}
       height={obj.height}
       rotation={obj.rotation}
+      opacity={obj.opacity ?? 1}
       crop={{
         x: obj.cropX ?? 0,
         y: obj.cropY ?? 0,
@@ -175,6 +176,7 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
                   width={obj.width}
                   fontSize={obj.fontSize}
                   fill={obj.fill}
+                  opacity={obj.opacity ?? 1}
                   draggable
                   rotation={obj.rotation}
                   visible={obj.visible}
@@ -211,6 +213,7 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
                   y={obj.y}
                   radius={obj.radius}
                   fill={obj.fill}
+                  opacity={obj.opacity ?? 1}
                   draggable
                   rotation={obj.rotation}
                   visible={obj.visible}
@@ -250,6 +253,7 @@ function CanvasStage({ objects, selectedId, onSelect, onChange, onDropAsset }) {
                   width={obj.width}
                   height={obj.height}
                   fill={obj.fill}
+                  opacity={obj.opacity ?? 1}
                   draggable
                   rotation={obj.rotation}
                   cornerRadius={8}

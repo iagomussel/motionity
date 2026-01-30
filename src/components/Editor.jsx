@@ -398,6 +398,11 @@ function Editor() {
     )
   }, [selectedId, duration])
 
+  const handleOptionChange = useCallback((updates) => {
+    if (!selectedId) return
+    updateObject(selectedId, updates)
+  }, [selectedId, updateObject])
+
   const handleApplyTemplate = useCallback((template) => {
     if (!template?.objects?.length) return
     setObjects((prev) => {
@@ -428,6 +433,7 @@ function Editor() {
     onCropChange: handleCropChange,
     onCloseCrop: () => setCropActive(false),
     onApplyTemplate: handleApplyTemplate,
+    onOptionChange: handleOptionChange,
     timelineItems,
     duration,
     currentTime,
