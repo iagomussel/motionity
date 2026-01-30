@@ -3192,8 +3192,20 @@ layer:nth-child(even) .properties {
   .speed-points circle {
     fill: #8a81ff;
   }
+  .speed-points circle.speed-point-outer {
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 2;
+  }
+  .speed-points circle.speed-point-outer.active {
+    stroke: #ffffff;
+  }
   .speed-points circle.inner {
     fill: white;
+  }
+  .speed-points circle.hit {
+    fill: transparent;
+    stroke: transparent;
+    pointer-events: all;
   }
   .speed-playhead line {
     stroke: white;
@@ -3264,6 +3276,10 @@ layer:nth-child(even) .properties {
     display: none;
   }
   body.mobile-speed-open #mobile-quick-actions {
+    display: none;
+  }
+  body.mobile-speed-open #mobile-toolbar,
+  body.mobile-speed-open #mobile-sheet {
     display: none;
   }
   .mobile-action {

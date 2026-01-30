@@ -1291,6 +1291,55 @@ function isDomElem(el) {
     : false;
 }
 
+function getSpeedCurveValue(curve, ratio) {
+  if (!curve || !curve.length) {
+    return 1;
+  }
+  var sorted = curve.slice().sort(function (a, b) {
+    return a.t - b.t;
+  });
+  var t = Math.min(Math.max(ratio, 0), 1);
+  if (t <= sorted[0].t) {
+    return sorted[0].v;
+  }
+  if (t >= sorted[sorted.length - 1].t) {
+    return sorted[sorted.length - 1].v;
+  }
+  for (var i = 0; i < sorted.length - 1; i++) {
+    var a = sorted[i];
+    var b = sorted[i + 1];
+    if (t >= a.t && t <= b.t) {
+      var seg = (t - a.t) / (b.t - a.t || 1);
+      return a.v + (b.v - a.v) * seg;
+    }
+  }
+  return sorted[0].v;
+}
+
+function applySpeedCurveToVideo(object, time) {
+  var meta = objects.find(function (obj) {
+    return obj.id == object.id;
+  });
+  if (!meta || !meta.speedCurve) {
+    return;
+  }
+  var keyframe = p_keyframes.find((x) => x.id == object.id);
+  if (!keyframe) {
+    return;
+  }
+  var clipDuration = keyframe.end - keyframe.start;
+  if (clipDuration <= 0) {
+    return;
+  }
+  var clipTime =
+    time - keyframe.start + keyframe.trimstart;
+  var ratio = clipTime / clipDuration;
+  var speed = getSpeedCurveValue(meta.speedCurve, ratio);
+  if (isDomElem($(object.getElement())[0])) {
+    $(object.getElement())[0].playbackRate = speed;
+  }
+}
+
 // Play videos when seeking/playing
 async function playVideos(time) {
   objects.forEach(async function (object) {
@@ -1325,6 +1374,7 @@ async function playVideos(time) {
       }
       object.set('visible', true);
       inst.renderAll();
+      applySpeedCurveToVideo(object, time);
       if ($(object.getElement())[0].paused == true) {
         $(object.getElement())[0].currentTime = parseFloat(
           (
@@ -1348,6 +1398,7 @@ async function playVideos(time) {
           autoplay: true,
           update: async function () {
             if (!paused && start) {
+              applySpeedCurveToVideo(object, currenttime);
               if (object.filters.length > 0) {
                 object.filters = [];
                 object.applyFilters();
@@ -1386,6 +1437,7 @@ async function playVideos(time) {
           },
         });
         if (paused) {
+          applySpeedCurveToVideo(object, time);
           $(object.getElement())[0].currentTime = parseFloat(
             (
               (time -

@@ -1759,6 +1759,248 @@ var mobileLayout = {
   scrubberTimer: null
 };
 
+var speedEditor = {
+  active: false,
+  points: [
+    { t: 0, v: 1.15 },
+    { t: 0.5, v: 4 },
+    { t: 1, v: 8 }
+  ],
+  selectedIndex: 1,
+  dragging: false,
+  dragIndex: null,
+  timer: null
+};
+
+var speedPresets = [
+  [
+    { t: 0, v: 1.15 },
+    { t: 0.35, v: 3 },
+    { t: 1, v: 8 }
+  ],
+  [
+    { t: 0, v: 8 },
+    { t: 0.6, v: 6 },
+    { t: 1, v: 1.15 }
+  ],
+  [
+    { t: 0, v: 1.15 },
+    { t: 0.4, v: 8 },
+    { t: 0.8, v: 1.4 },
+    { t: 1, v: 4 }
+  ],
+  [
+    { t: 0, v: 2 },
+    { t: 0.5, v: 2 },
+    { t: 1, v: 8 }
+  ],
+  [
+    { t: 0, v: 8 },
+    { t: 0.5, v: 1.2 },
+    { t: 1, v: 8 }
+  ]
+];
+
+function clamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function getSpeedRange() {
+  return { min: 1.15, max: 8 };
+}
+
+function mapSpeedToY(speed, height) {
+  var range = getSpeedRange();
+  var ratio = (speed - range.min) / (range.max - range.min);
+  return height - ratio * height;
+}
+
+function mapYToSpeed(y, height) {
+  var range = getSpeedRange();
+  var ratio = 1 - y / height;
+  return range.min + ratio * (range.max - range.min);
+}
+
+function buildSpeedPath(points, width, height) {
+  if (!points.length) {
+    return '';
+  }
+  var p = points.map(function (pt) {
+    return { x: pt.t * width, y: mapSpeedToY(pt.v, height) };
+  });
+  if (p.length === 1) {
+    return 'M ' + p[0].x + ' ' + p[0].y;
+  }
+  var d = 'M ' + p[0].x + ' ' + p[0].y;
+  for (var i = 0; i < p.length - 1; i++) {
+    var p0 = p[i - 1] || p[i];
+    var p1 = p[i];
+    var p2 = p[i + 1];
+    var p3 = p[i + 2] || p2;
+    var cp1x = p1.x + (p2.x - p0.x) / 6;
+    var cp1y = p1.y + (p2.y - p0.y) / 6;
+    var cp2x = p2.x - (p3.x - p1.x) / 6;
+    var cp2y = p2.y - (p3.y - p1.y) / 6;
+    d +=
+      ' C ' +
+      cp1x +
+      ' ' +
+      cp1y +
+      ', ' +
+      cp2x +
+      ' ' +
+      cp2y +
+      ', ' +
+      p2.x +
+      ' ' +
+      p2.y;
+  }
+  return d;
+}
+
+function sortSpeedPoints() {
+  speedEditor.points.sort(function (a, b) {
+    return a.t - b.t;
+  });
+}
+
+function getSpeedValueAt(t) {
+  if (!speedEditor.points.length) {
+    return 1.15;
+  }
+  sortSpeedPoints();
+  if (t <= speedEditor.points[0].t) {
+    return speedEditor.points[0].v;
+  }
+  if (t >= speedEditor.points[speedEditor.points.length - 1].t) {
+    return speedEditor.points[speedEditor.points.length - 1].v;
+  }
+  for (var i = 0; i < speedEditor.points.length - 1; i++) {
+    var a = speedEditor.points[i];
+    var b = speedEditor.points[i + 1];
+    if (t >= a.t && t <= b.t) {
+      var ratio = (t - a.t) / (b.t - a.t || 1);
+      return a.v + (b.v - a.v) * ratio;
+    }
+  }
+  return speedEditor.points[0].v;
+}
+
+function renderSpeedEditor() {
+  var $svg = $('#speed-editor-svg');
+  if (!$svg.length) {
+    return;
+  }
+  var width = 360;
+  var height = 220;
+  sortSpeedPoints();
+  $('#speed-editor-path').attr(
+    'd',
+    buildSpeedPath(speedEditor.points, width, height)
+  );
+  var pointsHtml = '';
+  speedEditor.points.forEach(function (pt, index) {
+    var x = pt.t * width;
+    var y = mapSpeedToY(pt.v, height);
+    var outerClass = 'speed-point-outer';
+    if (index === speedEditor.selectedIndex) {
+      outerClass += ' active';
+    }
+    pointsHtml +=
+      "<circle class='" +
+      outerClass +
+      "' data-index='" +
+      index +
+      "' cx='" +
+      x +
+      "' cy='" +
+      y +
+      "' r='10'/>";
+    pointsHtml +=
+      "<circle class='inner' data-index='" +
+      index +
+      "' cx='" +
+      x +
+      "' cy='" +
+      y +
+      "' r='5'/>";
+    pointsHtml +=
+      "<circle class='hit' data-index='" +
+      index +
+      "' cx='" +
+      x +
+      "' cy='" +
+      y +
+      "' r='18'/>";
+  });
+  $('#speed-editor-points').html(pointsHtml);
+  updateSpeedEditorPlayhead();
+}
+
+function updateSpeedEditorPlayhead() {
+  var width = 360;
+  var height = 220;
+  var timeRatio = 0;
+  if (typeof timelinetime !== 'undefined' && timelinetime > 0) {
+    timeRatio = clamp(currenttime / timelinetime, 0, 1);
+  }
+  var x = timeRatio * width;
+  var value = getSpeedValueAt(timeRatio);
+  var y = mapSpeedToY(value, height);
+  $('#speed-editor-playhead').attr({ x1: x, x2: x });
+  $('#speed-editor-playhead-dot').attr({ cx: x, cy: y });
+}
+
+function startSpeedEditorTimer() {
+  if (speedEditor.timer) {
+    return;
+  }
+  speedEditor.timer = setInterval(updateSpeedEditorPlayhead, 120);
+}
+
+function stopSpeedEditorTimer() {
+  if (speedEditor.timer) {
+    clearInterval(speedEditor.timer);
+    speedEditor.timer = null;
+  }
+}
+
+function loadSpeedFromSelection() {
+  var selection = canvas && canvas.getActiveObject
+    ? canvas.getActiveObject()
+    : null;
+  if (!selection) {
+    return;
+  }
+  var meta = objects.find(function (obj) {
+    return obj.id == selection.get('id');
+  });
+  if (meta && meta.speedCurve && meta.speedCurve.length) {
+    speedEditor.points = meta.speedCurve.map(function (pt) {
+      return { t: pt.t, v: pt.v };
+    });
+    speedEditor.selectedIndex = Math.min(1, speedEditor.points.length - 1);
+  }
+}
+
+function saveSpeedToSelection() {
+  var selection = canvas && canvas.getActiveObject
+    ? canvas.getActiveObject()
+    : null;
+  if (!selection) {
+    return;
+  }
+  var meta = objects.find(function (obj) {
+    return obj.id == selection.get('id');
+  });
+  if (meta) {
+    meta.speedCurve = speedEditor.points.map(function (pt) {
+      return { t: pt.t, v: pt.v };
+    });
+    save();
+  }
+}
+
 function storeHome($el) {
   return { parent: $el.parent(), next: $el.next() };
 }
@@ -2046,8 +2288,14 @@ function setMobileSpeedOpen(open) {
   if (open) {
     $('body').addClass('mobile-speed-open');
     setMobileLibraryOpen(false);
+    speedEditor.active = true;
+    loadSpeedFromSelection();
+    renderSpeedEditor();
+    startSpeedEditorTimer();
   } else {
     $('body').removeClass('mobile-speed-open');
+    speedEditor.active = false;
+    stopSpeedEditorTimer();
   }
 }
 
@@ -2093,11 +2341,98 @@ $(document).on('click', '#speed-editor-close', function () {
   setMobileSpeedOpen(false);
 });
 $(document).on('click', '#speed-editor-apply', function () {
+  saveSpeedToSelection();
   setMobileSpeedOpen(false);
 });
 $(document).on('click', '.speed-preset', function () {
   $('.speed-preset').removeClass('active');
   $(this).addClass('active');
+  var index = $(this).index();
+  if (speedPresets[index]) {
+    speedEditor.points = speedPresets[index].map(function (pt) {
+      return { t: pt.t, v: pt.v };
+    });
+    speedEditor.selectedIndex = Math.min(1, speedEditor.points.length - 1);
+    renderSpeedEditor();
+  }
+});
+$(document).on('click', '#speed-editor-add', function () {
+  var timeRatio = 0;
+  if (typeof timelinetime !== 'undefined' && timelinetime > 0) {
+    timeRatio = clamp(currenttime / timelinetime, 0, 1);
+  }
+  var value = getSpeedValueAt(timeRatio);
+  speedEditor.points.push({ t: timeRatio, v: value });
+  sortSpeedPoints();
+  speedEditor.selectedIndex = speedEditor.points.findIndex(function (pt) {
+    return pt.t === timeRatio && pt.v === value;
+  });
+  if (speedEditor.selectedIndex < 0) {
+    speedEditor.selectedIndex = 0;
+  }
+  renderSpeedEditor();
+});
+$(document).on('click', '#speed-editor-delete', function () {
+  if (speedEditor.selectedIndex === null) {
+    return;
+  }
+  if (speedEditor.points.length <= 2) {
+    return;
+  }
+  if (
+    speedEditor.selectedIndex === 0 ||
+    speedEditor.selectedIndex === speedEditor.points.length - 1
+  ) {
+    return;
+  }
+  speedEditor.points.splice(speedEditor.selectedIndex, 1);
+  speedEditor.selectedIndex = Math.min(
+    speedEditor.selectedIndex,
+    speedEditor.points.length - 1
+  );
+  renderSpeedEditor();
+});
+$(document).on('pointerdown', '#speed-editor-points .hit', function (e) {
+  e.preventDefault();
+  var idx = parseInt($(this).attr('data-index'), 10);
+  if (isNaN(idx)) {
+    return;
+  }
+  speedEditor.dragging = true;
+  speedEditor.dragIndex = idx;
+  speedEditor.selectedIndex = idx;
+  renderSpeedEditor();
+});
+$(document).on('pointermove', function (e) {
+  if (!speedEditor.dragging || speedEditor.dragIndex === null) {
+    return;
+  }
+  e.preventDefault();
+  var svg = document.getElementById('speed-editor-svg');
+  if (!svg) {
+    return;
+  }
+  var rect = svg.getBoundingClientRect();
+  var width = 360;
+  var height = 220;
+  var x = clamp(e.clientX - rect.left, 0, rect.width);
+  var y = clamp(e.clientY - rect.top, 0, rect.height);
+  var t = clamp(x / rect.width, 0, 1);
+  var v = mapYToSpeed((y / rect.height) * height, height);
+  v = clamp(v, getSpeedRange().min, getSpeedRange().max);
+  if (speedEditor.dragIndex === 0) {
+    t = 0;
+  } else if (speedEditor.dragIndex === speedEditor.points.length - 1) {
+    t = 1;
+  }
+  speedEditor.points[speedEditor.dragIndex] = { t: t, v: v };
+  renderSpeedEditor();
+});
+$(document).on('pointerup pointercancel', function () {
+  if (speedEditor.dragging) {
+    speedEditor.dragging = false;
+    speedEditor.dragIndex = null;
+  }
 });
 $(document).on('click', '#mobile-library-close', function () {
   setMobileLibraryOpen(false);
@@ -2252,9 +2587,23 @@ function initMobileSelectionListeners() {
   if (!canvas || !canvas.on) {
     return;
   }
-  canvas.on('selection:created', updateMobileQuickActions);
-  canvas.on('selection:updated', updateMobileQuickActions);
-  canvas.on('selection:cleared', updateMobileQuickActions);
+  canvas.on('selection:created', function () {
+    updateMobileQuickActions();
+    if (speedEditor.active) {
+      loadSpeedFromSelection();
+      renderSpeedEditor();
+    }
+  });
+  canvas.on('selection:updated', function () {
+    updateMobileQuickActions();
+    if (speedEditor.active) {
+      loadSpeedFromSelection();
+      renderSpeedEditor();
+    }
+  });
+  canvas.on('selection:cleared', function () {
+    updateMobileQuickActions();
+  });
   updateMobileQuickActions();
 }
 

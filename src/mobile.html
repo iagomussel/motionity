@@ -514,7 +514,7 @@
 					<div id="speed-editor-curve">
 						<div class="speed-axis speed-axis-top">8x</div>
 						<div class="speed-axis speed-axis-bottom">1.15x</div>
-						<svg viewBox="0 0 360 220" aria-hidden="true">
+						<svg id="speed-editor-svg" viewBox="0 0 360 220" aria-hidden="true">
 							<g class="speed-grid">
 								<line x1="0" y1="20" x2="360" y2="20"/>
 								<line x1="0" y1="60" x2="360" y2="60"/>
@@ -523,18 +523,11 @@
 								<line x1="0" y1="180" x2="360" y2="180"/>
 								<line x1="0" y1="220" x2="360" y2="220"/>
 							</g>
-							<path class="speed-curve" d="M10 190 C 80 180, 120 80, 180 80 S 280 170, 350 40"/>
-							<g class="speed-points">
-								<circle cx="10" cy="190" r="10"/>
-								<circle cx="10" cy="190" r="5" class="inner"/>
-								<circle cx="180" cy="80" r="10"/>
-								<circle cx="180" cy="80" r="5" class="inner"/>
-								<circle cx="350" cy="40" r="10"/>
-								<circle cx="350" cy="40" r="5" class="inner"/>
-							</g>
+							<path id="speed-editor-path" class="speed-curve" d=""/>
+							<g id="speed-editor-points" class="speed-points"></g>
 							<g class="speed-playhead">
-								<line x1="210" y1="0" x2="210" y2="220"/>
-								<circle cx="210" cy="90" r="6"/>
+								<line id="speed-editor-playhead" x1="0" y1="0" x2="0" y2="220"/>
+								<circle id="speed-editor-playhead-dot" cx="0" cy="0" r="6"/>
 							</g>
 						</svg>
 					</div>
