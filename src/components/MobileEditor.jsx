@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { FolderOpen, LayoutTemplate, Sliders, PlusCircle, Zap } from 'lucide-react'
 import CanvasStage from './CanvasStage'
 import Timeline from './Timeline'
 import AssetsPanel from './AssetsPanel'
@@ -43,7 +42,7 @@ function MobileEditor({
       <header className="mobile-header">
         <div className="mobile-brand">
           <div className="brand-icon">
-            <Zap size={18} />
+            <img src="/assets/zap.svg" alt="" />
           </div>
           <div>
             <div className="mobile-title">VeloMotion</div>
@@ -104,18 +103,18 @@ function MobileEditor({
           className={`icon-button ${activePanel === 'templates' ? 'active' : ''}`}
           onClick={() => togglePanel('templates')}
         >
-          <LayoutTemplate size={18} />
+          <img src="/assets/mockup.svg" alt="" />
           <span>Templates</span>
         </button>
         <button type="button" className="add-button" onClick={onAddRect}>
-          <PlusCircle size={26} />
+          <img src="/assets/upload.svg" alt="" />
         </button>
         <button
           type="button"
           className={`icon-button ${activePanel === 'assets' ? 'active' : ''}`}
           onClick={() => togglePanel('assets')}
         >
-          <FolderOpen size={18} />
+          <img src="/assets/uploads.svg" alt="" />
           <span>Assets</span>
         </button>
         <button
@@ -123,7 +122,7 @@ function MobileEditor({
           className={`icon-button ${activePanel === 'options' ? 'active' : ''}`}
           onClick={() => togglePanel('options')}
         >
-          <Sliders size={18} />
+          <img src="/assets/filters.svg" alt="" />
           <span>Edit</span>
         </button>
       </nav>

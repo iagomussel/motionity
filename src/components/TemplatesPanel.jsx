@@ -3,6 +3,7 @@ const TEMPLATE_PRESETS = [
     id: 'bold-title',
     name: 'Bold Title',
     description: 'Hero text + accent block',
+    icon: '/assets/mockup.svg',
     objects: [
       {
         type: 'rect',
@@ -28,6 +29,7 @@ const TEMPLATE_PRESETS = [
     id: 'product-promo',
     name: 'Product Promo',
     description: 'Image + price tag',
+    icon: '/assets/image.svg',
     objects: [
       {
         type: 'image',
@@ -61,6 +63,7 @@ const TEMPLATE_PRESETS = [
     id: 'subtitle-block',
     name: 'Subtitle Block',
     description: 'Stacked labels',
+    icon: '/assets/text.svg',
     objects: [
       {
         type: 'rect',
@@ -110,7 +113,11 @@ function TemplatesPanel({ onApplyTemplate, compact = false }) {
             onClick={() => onApplyTemplate(template)}
           >
             <div className="template-thumb">
-              <span>{template.name.split(' ')[0]}</span>
+              {template.icon ? (
+                <img src={template.icon} alt="" />
+              ) : (
+                <span>{template.name.split(' ')[0]}</span>
+              )}
             </div>
             <div className="template-info">
               <strong>{template.name}</strong>

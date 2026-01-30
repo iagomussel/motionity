@@ -1,5 +1,4 @@
 import { useMemo, useRef } from 'react'
-import { Layers, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 
 function Timeline({
   duration,
@@ -35,17 +34,20 @@ function Timeline({
           <span className="timeline-time">{currentTime.toFixed(2)}s</span>
           <div className="timeline-transport">
             <button type="button" onClick={() => onTimeChange(Math.max(0, currentTime - 1))}>
-              <SkipBack size={16} />
+              <img src="/assets/skip.svg" alt="Back" />
             </button>
             <button type="button" className="play" onClick={onPlayToggle}>
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              <img
+                src={isPlaying ? '/assets/pause-button.svg' : '/assets/play-button.svg'}
+                alt={isPlaying ? 'Pause' : 'Play'}
+              />
             </button>
             <button type="button" onClick={() => onTimeChange(Math.min(duration, currentTime + 1))}>
-              <SkipForward size={16} />
+              <img src="/assets/skip.svg" alt="Forward" className="flip-x" />
             </button>
           </div>
           <button type="button" className="layers-button" onClick={onReset}>
-            <Layers size={16} />
+            <img src="/assets/more-hoz.svg" alt="Layers" />
           </button>
         </div>
       ) : (

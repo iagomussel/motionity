@@ -239,6 +239,13 @@ button:hover {
   font-weight: 700;
 }
 
+.asset-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .asset-label {
   font-size: 12px;
   color: #cbd5f5;
@@ -295,6 +302,12 @@ button:hover {
   justify-content: center;
   font-weight: 700;
   color: #f8fafc;
+}
+
+.template-thumb img {
+  width: 28px;
+  height: 28px;
+  filter: invert(85%);
 }
 
 .template-info {
@@ -482,6 +495,12 @@ button:hover {
   color: #fff;
 }
 
+.brand-icon img {
+  width: 18px;
+  height: 18px;
+  filter: invert(100%);
+}
+
 .mobile-title {
   font-size: 15px;
   font-weight: 700;
@@ -514,6 +533,16 @@ button:hover {
 
 .icon-button span {
   font-size: 10px;
+}
+
+.icon-button img {
+  width: 18px;
+  height: 18px;
+  filter: invert(70%);
+}
+
+.icon-button.active img {
+  filter: invert(55%) sepia(60%) saturate(2600%) hue-rotate(235deg) brightness(95%) contrast(96%);
 }
 
 .icon-button.small {
@@ -587,6 +616,21 @@ button:hover {
   background: transparent;
   color: #94a3b8;
   padding: 6px;
+}
+
+.timeline-transport img,
+.layers-button img {
+  width: 16px;
+  height: 16px;
+  filter: invert(80%);
+}
+
+.timeline-transport .play img {
+  filter: none;
+}
+
+.flip-x {
+  transform: scaleX(-1);
 }
 
 .mobile-bottom-nav {
@@ -707,6 +751,12 @@ button:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.add-button img {
+  width: 24px;
+  height: 24px;
+  filter: invert(100%);
 }
 
 @media (max-width: 768px) {
