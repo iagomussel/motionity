@@ -12,6 +12,26 @@ function getGlobal() {
   return window[globalKey]
 }
 
+function findExistingScript(src) {
+  const desired = new URL(src, document.baseURI).href
+  const scripts = document.getElementsByTagName('script')
+
+  for (const script of scripts) {
+    // Prefer the attribute since `script.src` is always absolute and may differ from how it was authored.
+    const attr = script.getAttribute('src')
+    if (!attr) continue
+
+    try {
+      const resolved = new URL(attr, document.baseURI).href
+      if (resolved === desired) return script
+    } catch {
+      // ignore
+    }
+  }
+
+  return null
+}
+
 function loadScript(src, { timeoutMs = 30000 } = {}) {
   const state = getGlobal()
   state.scriptPromises ||= {}
@@ -19,7 +39,7 @@ function loadScript(src, { timeoutMs = 30000 } = {}) {
   if (state.scriptPromises[src]) return state.scriptPromises[src]
 
   state.scriptPromises[src] = new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`)
+    const existing = findExistingScript(src)
     if (existing?.dataset?.legacyLoaded === 'true') {
       resolve()
       return
