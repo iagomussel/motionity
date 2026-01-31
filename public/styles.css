@@ -1272,6 +1272,17 @@ input[type="number"] {
 #skip-forward {
   margin-left: 15px;
 }
+#loop-toggle {
+  display: inline-block;
+  margin-left: 12px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+#loop-toggle.loop-active {
+  opacity: 1;
+}
 #current-time {
   position: absolute;
   margin-left: auto;

@@ -641,6 +641,15 @@ $(document).ready(function () {
     }
   });
 
+  $(document).on('click', '#loop-toggle', function () {
+    loopPlayback = !loopPlayback;
+    if (loopPlayback) {
+      $(this).addClass('loop-active');
+    } else {
+      $(this).removeClass('loop-active');
+    }
+  });
+
   // Detect when not clicking on certain elements
   $(document).on('mousedown', function (e) {
     // De-select keyframes

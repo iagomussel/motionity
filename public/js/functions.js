@@ -2100,7 +2100,18 @@ async function animate(play, time) {
           }
         },
         complete: function () {
-          pause();
+          if (loopPlayback && !paused) {
+            currenttime = 0;
+            if (!recording) {
+              renderTime();
+              $('#seekbar').css({
+                left: currenttime / timelinetime + offset_left,
+              });
+            }
+            play();
+          } else {
+            pause();
+          }
         },
       });
     } else if (paused) {
