@@ -38,6 +38,349 @@ const overlayStyle = {
   fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
 }
 
+// Keeping this giant HTML blob outside the component prevents re-allocating it on every render
+// (which happens several times while scripts load).
+const LEGACY_MARKUP = `
+<div id="disclaimer">
+				<div id="optimized">
+					<div id="emoji">🤔</div>
+					<div id="opt-title">Motionity isn't optimized for mobile</div>
+					<div id="opt-desc">You need to use a computer to be able to create animations with Motionity.</div>
+					<a href="https://twitter.com/alyssaxuu" target="_blank" rel="noreferrer" id="opt-button">Other products by the maker</a>
+				</div>
+				<div id="disc-overlay"></div>
+			</div>
+        <audio controls id="audio-thing">
+          <source src="assets/audio.wav" type="audio/wav">
+        </audio>
+        <input type="file" id="filepick" accept="image/*,video/*,audio/*" multiple>
+        <input type="file" id="filepick2" accept="audio/*">
+				<input type="file" id="filepick3" accept="application/json">
+				<input type="file" id="import" style="display:none" accept='.json' aria-hidden="true" >
+				<div id="upload-popup">
+					<div id="upload-popup-container">
+						<div id="upload-popup-header">
+							<div id="upload-popup-title">Upload media</div>
+							<img id="upload-popup-close" src="assets/close.svg">
+						</div>
+						<div id="upload-drop-area">
+							<div id="upload-drop-group">
+								<img src="assets/upload.svg">
+								<div id="upload-drop-title">Click to upload</div>
+								<div id="upload-drop-subtitle">Or drag and drop a file</div>
+							</div>
+						</div>
+						<div id="upload-link">
+							<input id="upload-link-input" placeholder="Paste an image of video URL">
+							<div id="upload-link-add">Add</div>
+						</div>
+					</div>
+					<div id="upload-overlay"></div>
+				</div>
+        <div id="download-modal">
+            <p class="header">Download settings</p>
+            <p class="subheader">Formats</p>
+            <div id="radio">
+              <input class="magic-radio" type="radio" name="radio" id="webm-format" value="webm" checked>
+              <label for="webm-format">WEBM video <span>(fastest)</span></label>
+            	<input class="magic-radio" type="radio" name="radio" value="mp4" id="mp4-format">
+              <label for="mp4-format">MP4 video</label>
+              <input class="magic-radio" type="radio" name="radio" value="gif" id="gif-format">
+              <label for="gif-format">Animated GIF</label>
+							<input class="magic-radio" type="radio" name="radio" value="image" id="image-format">
+              <label for="image-format">Image</label>
+            </div>
+            <div id="download-real">Download</div>
+        </div>
+				<div id="import-export-modal">
+					<p class="header">Import & export</p>
+					<p class="subtitle">Save this project locally, or load an existing one.</p>
+					<p class="header-2">Import a project</p>
+					<div id="import-project"><img src="assets/import.svg"> <span>Import</span></div>
+					<p class="header-2">Export this project</p>
+					<div id="export-project"><img src="assets/download-icon.svg"> <span>Export</span></div>
+				</div>
+        <div id="background-overlay"></div>
+        <div id="color-picker"></div>
+        <div id="color-picker-fill"></div>
+        <div id="toolbar" class="noselect">
+					<div id="logo"><img src="assets/logo.svg"></div>
+						<div id="tool-wrap">
+							<div class="tool" id="upload-tool"><img src="assets/uploads.svg"><p>Uploads</p></div>
+							<div class="tool tool-active" id="shape-tool"><img src="assets/shape-active.svg"><p>Objects</p></div>
+							<div class="tool" id="image-tool"><img src="assets/image.svg"><p>Images</p></div>
+							<div class="tool" id="text-tool"><img src="assets/text.svg"><p>Text</p></div>
+							<div class="tool" id="video-tool"><img src="assets/video.svg"><p>Videos</p></div>
+							<div class="tool" id="audio-tool"><img src="assets/audio.svg"><p>Audio</p></div>
+							<div class="tool" id="more-tool"><img src="assets/more-hoz.svg"><p>More</p></div>
+					</div>
+				</div>
+				<div id="more-over">
+					<div id="upload-lottie">
+						<img src="assets/upload-grey.svg"> Upload Lottie
+					</div>						
+					<div id="clear-project">
+						<img src="assets/clear.svg"> Clear project
+					</div>
+				</div>
+				<div id="behind-browser"></div>
+        <div id="browser">
+            <div id="browser-container">
+							<div id="search-fixed"><p class="property-title">Objects</p><img id="collapse" src="assets/collapse.svg"><div id="browser-search"><input placeholder="Search..."><img src="assets/search.svg" id="search-icon"><img src="assets/delete.svg" id="delete-search"><div id="search-button">Go</div></div></div><div id="shapes-cont"><p class="row-title">Shapes</p><div class="gallery-row" id="shapes-row"></div><p class="row-title">Emojis</p><div class="gallery-row" id="emojis-row"></div></div>
+            </div>
+        </div>
+        <div id="properties">
+        <div id="properties-overlay"></div>
+        <div id="align" class="align-off">
+            <div id="align-v">
+                <img class="align" id="align-top" src="assets/align-top.svg" title="Align to the top">
+                <img class="align" id="align-center-v" src="assets/align-center-v.svg" title="Align to the center">
+                <img class="align" id="align-bottom" src="assets/align-bottom.svg" title="Align to the bottom">
+            </div>
+            <div id="align-h">
+                <img class="align" id="align-left" src="assets/align-left.svg" title="Align to the left">
+                <img class="align" id="align-center-h" src="assets/align-center-h.svg" title="Align to the center">
+                <img class="align" id="align-right" src="assets/align-right.svg" title="Align to the right">
+            </div>
+        </div>
+        <hr>
+        <div id="object-specific">
+            <div id="canvas-properties" class="panel-section">
+                <p class="property-title">Canvas settings</p>
+                <table>
+                    <tr>
+                        <th class="name-col">Preset</th>
+                        <th class="value-col"><select id="preset"><option>Dribbble shot</option><option>Facebook post</option></select></th>
+                    </tr>
+                    <tr>
+                        <th class="name-col">Size</th>
+                        <th class="value-col"><div id="canvas-w" class="property-input" data-label='W'><input min=1 type="number" value=1000></div><div id="canvas-h" class="property-input" data-label='H'><input type="number" value=1000 min=1></div></th>
+                    </tr>
+                    <tr>
+                        <th class="name-col">Color</th>
+                        <th class="value-col">
+                            <div id="canvas-color">
+                                <div id="color-side" class="color-picker"></div>
+                                <input value="#FFFFFF" disabled="disabled">
+                            </div>
+                            <div id="canvas-color-opacity" class="property-input" data-label='%'><input type="number" value=100></div>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th class="name-col">Duration</th>
+                        <th class="value-col" id="duration-cell"><div id="canvas-duration" class="property-input" data-label='s'><input type="number" value=15.00></div></th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        </div>
+        <div id="canvas-area">
+					<div id="filters-parent">
+						<div id="filters">
+							<div id="filters-container">
+							<div id="filters-header">
+								<div id="filters-title">Filters</div>
+								<img src="assets/close.svg" id="filters-close">
+							</div>
+							<select id="filters-list">
+								<option value="none">No filter</option>
+								<option value="Invert">Invert</option>
+								<option value="Sepia">Sepia</option>
+								<option value="BlackWhite">Black & white</option>
+								<option value="Brownie">Retro</option>
+								<option value="Vintage">Vintage</option>
+								<option value="Technicolor">Technicolor</option>
+								<option value="Kodachrome">Kodachrome</option>
+								<option value="Polaroid">Polaroid</option>
+							</select>
+							<hr>
+							<div id="filters-title">Adjustments</div>
+							<div id="reset-filters"><img src="assets/repeat.svg"> Reset</div>
+							<div class="filter-row">
+								<th class="name-col">Brightness</th>
+								<th class="value-col">
+									<div id="filter-brightness" class="select-filter"></div>
+								</th>
+							</div>
+							<div class="filter-row">
+								<th class="name-col">Contrast</th>
+								<th class="value-col">
+									<div id="filter-contrast" class="select-filter"></div>
+								</th>
+							</div>
+							<div class="filter-row">
+								<th class="name-col">Saturation</th>
+								<th class="value-col">
+									<div id="filter-saturation" class="select-filter"></div>
+								</th>
+							</div>
+							<div class="filter-row">
+								<th class="name-col">Vibrance</th>
+								<th class="value-col">
+									<div id="filter-vibrance" class="select-filter"></div>
+								</th>
+							</div>
+							<div class="filter-row">
+								<th class="name-col">Hue</th>
+								<th class="value-col">
+									<div id="filter-hue" class="select-filter"></div>
+								</th>
+							</div>
+							<hr>
+							<div id="filters-title">Chroma key</div>
+							<div class="filter-row">
+								<th class="name-col">Status</th>
+								<th class="value-col">
+									<div id="status-toggle">
+										<div id="status-on" class="status-trigger">On</div>
+										<div id="status-off" class="status-trigger status-active">Off</div>
+									</div>
+								</th>
+							</div>
+							<div class="filter-row" id="filter-color">
+								<th class="name-col">Color</th>
+								<th class="value-col">
+									<div id="chroma-color">
+										<div id="color-chroma-side" class="color-picker"></div>
+										<input value="#FFFFFF" disabled="disabled">
+									</div>
+								</th>
+							</div>
+							<div class="filter-row">
+								<th class="name-col">Distance</th>
+								<th class="value-col">
+									<div id="chroma-distance" class="select-filter"></div>
+								</th>
+							</div>
+							<hr>
+							<div id="filters-title">Stylize</div>
+							<div class="filter-row">
+								<th class="name-col">Noise</th>
+								<th class="value-col">
+									<div id="filter-noise" class="select-filter"></div>
+								</th>
+							</div>
+							<div class="filter-row" id="blur">
+								<th class="name-col">Blur</th>
+								<th class="value-col">
+									<div id="filter-blur" class="select-filter"></div>
+								</th>
+							</div>
+						</div>
+						</div>
+						</div>
+						<div id="top-canvas">
+							<div id="undo"><img src="assets/undo.svg"> Undo</div>
+							<div id="redo"><img src="assets/undo.svg"> Redo</div>
+							<div id="other-controls">
+                <div title="Hand tool (Space bar)" id="hand-tool">
+                    <img src="assets/hand-tool.svg">
+                </div>
+                <div id="zoom-level" title="Canvas zoom level"><span>100%</span><img src="assets/arrow.svg"></div>
+                <div id="zoom-options" class="zoom-hidden">
+                    <div class="zoom-options-item" data-zoom="in">Zoom in</div>
+                    <div class="zoom-options-item" data-zoom="out">Zoom out</div>
+                    <div class="zoom-options-item" data-zoom="50">Zoom to 50%</div>
+                    <div class="zoom-options-item" data-zoom="100">Zoom to 100%</div>
+                    <div class="zoom-options-item" data-zoom="200">Zoom to 200%</div>
+                </div>
+            	</div>
+						</div>
+						<div id="bottom-canvas">
+							<a id="sponsor" href="https://github.com/sponsors/alyssaxuu" target="_blank" rel="noreferrer"><img src="assets/sponsor.svg"> Sponsor</a>
+							<a id="alyssa-credit" href="https://twitter.com/alyssaxuu" target="_blank" rel="noreferrer">Made by <span>Alyssa X</span> <img src="assets/alyssaimg.jpeg"></a>
+						</div>
+            <img src="assets/replace-image.svg" id="replace-image">
+						<img src="assets/loading-image.svg" id="load-image" class="load-media">
+						<img src="assets/loading-video.svg" id="load-video" class="load-media">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div id="timeline-handle"></div>
+        <div id="bottom-area" class="noselect">
+            <div id="keyframe-properties">
+                <div id="easing">
+                    <p class="property-title">Keyframe easing</p>
+                    <select id="easing">
+                        <option value="linear">Linear</option>
+                        <option value="easeInQuad">Ease in</option>
+                        <option value="easeOutQuad">Ease out</option>
+                        <option value="easeinOutQuad">Ease in-out</option>
+                        <option value="easeOutInQuad">Ease out-in</option>
+												<option value="easeInBounce">Ease in bounce</option>
+                        <option value="easeOutBounce">Ease out bounce</option>
+                        <option value="easeinOutBounce">Ease in-out bounce</option>
+                        <option value="easeOutInBouce">Ease out-in bounce</option>
+												<option value="easeOutInBouce">Ease out-in bounce</option>
+												<option value="easeInSine">Ease in sine</option>
+                        <option value="easeOutSine">Ease out sine</option>
+                        <option value="easeinOutSine">Ease in-out sine</option>
+                        <option value="easeOutInSine">Ease out-in sine</option>
+												<option value="easeOutInSine">Ease out-in sine</option>
+												<option value="easeInCubic">Ease in cubic</option>
+                        <option value="easeOutCubic">Ease out cubic</option>
+                        <option value="easeinOutCubic">Ease in-out cubic</option>
+                        <option value="easeOutInCubic">Ease out-in cubic</option>
+												<option value="easeOutInCubic">Ease out-in cubic</option>
+                    </select>
+                </div>
+            </div>
+            <div id="nothing"></div>
+            <div id="layer-list">
+                <div id="layerhead">LAYERS</div>
+                <div id="layer-inner-list">
+									<img src="assets/nolayers.svg" id="nolayers">
+                </div>
+            </div>
+            <div id="timearea">
+                <div id="timeline">
+                    <div id="seekarea"><div id="inner-seekarea"><div id="seekevents"></div></div><div id="time-numbers" class="noselect"></div><div id="seek-hover"></div><div id="seekbar"></div></div>
+                    <div id="line-snap"></div>
+                    <div id="inner-timeline"></div>
+                </div>
+            </div>
+        </div>
+        <div style="display:none;">
+            <canvas id="canvasrecord"></canvas>
+        </div>
+        <div id="controls" class="noselect">
+            <img id="timeline-big" src="assets/timeline-big.svg">
+            <div id="timeline-zoom"></div>
+            <img src="assets/timeline-small.svg" id="timeline-small">
+						<div id="speed">
+							<div id="speed-settings">
+								<div class="speed" data-speed="4">4.0x</div>
+								<div class="speed" data-speed="3">3.0x</div>
+								<div class="speed" data-speed="2">2.0x</div>
+								<div class="speed" data-speed="1.5">1.5x</div>
+								<div class="speed" data-speed="1">1.0x</div>
+								<div class="speed" data-speed="0.5">0.5x</div>
+							</div>
+							<img src="assets/zap.svg"> <span>1.0x</span> <img id="speed-arrow" src="assets/arrow.svg">
+						</div>
+            <div id="playback">
+                <div id="current-time">
+                    <input value="00:00:00" readonly>
+                </div>
+                <img src="assets/skip.svg" id="skip-backward">
+                <img src="assets/play-button.svg" id="play-button">
+                <img src="assets/skip.svg" id="skip-forward">
+                <img src="assets/repeat.svg" id="loop-toggle">
+                <div id="total-time">
+                    <input value="00:00:00" readonly>
+                </div>
+            </div>
+						<div id="controls-right">
+							<div id="share"><img src="assets/importexport.svg"> Import & export</div>
+							<div id="download"><img src="assets/download-icon.svg"> Download</div>
+						</div>
+        </div>
+        
+        <video id="test-video"></video>
+        <input id="emptyInput" value=" " style="opacity:0">
+`
+
+const LEGACY_DANGEROUS = { __html: LEGACY_MARKUP }
+
 function LegacyEditor() {
   const [status, setStatus] = useState({
     phase: 'loading',
@@ -86,9 +429,7 @@ function LegacyEditor() {
       {status.phase !== 'ready' && (
         <div style={overlayStyle} role="status" aria-live="polite">
           <div style={{ width: 520, maxWidth: '90vw' }}>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
-              Loading editor…
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Loading editor…</div>
 
             {status.phase === 'loading' && (
               <>
@@ -112,9 +453,7 @@ function LegacyEditor() {
                     }}
                   />
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>
-                  {percent}%
-                </div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>{percent}%</div>
               </>
             )}
 
@@ -157,12 +496,7 @@ function LegacyEditor() {
         </div>
       )}
 
-      <div
-        className="legacy-root"
-        dangerouslySetInnerHTML={{
-          __html: "\n<div id=\"disclaimer\">\n\t\t\t\t<div id=\"optimized\">\n\t\t\t\t\t<div id=\"emoji\">🤔</div>\n\t\t\t\t\t<div id=\"opt-title\">Motionity isn't optimized for mobile</div>\n\t\t\t\t\t<div id=\"opt-desc\">You need to use a computer to be able to create animations with Motionity.</div>\n\t\t\t\t\t<a href=\"https://twitter.com/alyssaxuu\" target=\"_blank\" id=\"opt-button\">Other products by the maker</a>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"disc-overlay\"></div>\n\t\t\t</div>\n        <audio controls id=\"audio-thing\">\n          <source src=\"assets/audio.wav\" type=\"audio/wav\">\n        </audio>\n        <input type=\"file\" id=\"filepick\" accept=\"image/*,video/*,audio/*\" multiple>\n        <input type=\"file\" id=\"filepick2\" accept=\"audio/*\">\n\t\t\t\t<input type=\"file\" id=\"filepick3\" accept=\"application/json\">\n\t\t\t\t<input type=\"file\" id=\"import\" style=\"display:none\" accept='.json' aria-hidden=\"true\" >\n\t\t\t\t<div id=\"upload-popup\">\n\t\t\t\t\t<div id=\"upload-popup-container\">\n\t\t\t\t\t\t<div id=\"upload-popup-header\">\n\t\t\t\t\t\t\t<div id=\"upload-popup-title\">Upload media</div>\n\t\t\t\t\t\t\t<img id=\"upload-popup-close\" src=\"assets/close.svg\">\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div id=\"upload-drop-area\">\n\t\t\t\t\t\t\t<div id=\"upload-drop-group\">\n\t\t\t\t\t\t\t\t<img src=\"assets/upload.svg\">\n\t\t\t\t\t\t\t\t<div id=\"upload-drop-title\">Click to upload</div>\n\t\t\t\t\t\t\t\t<div id=\"upload-drop-subtitle\">Or drag and drop a file</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div id=\"upload-link\">\n\t\t\t\t\t\t\t<input id=\"upload-link-input\" placeholder=\"Paste an image of video URL\">\n\t\t\t\t\t\t\t<div id=\"upload-link-add\">Add</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div id=\"upload-overlay\"></div>\n\t\t\t\t</div>\n        <div id=\"download-modal\">\n            <p class=\"header\">Download settings</p>\n            <p class=\"subheader\">Formats</p>\n            <div id=\"radio\">\n              <input class=\"magic-radio\" type=\"radio\" name=\"radio\" id=\"webm-format\" value=\"webm\" checked>\n              <label for=\"webm-format\">WEBM video <span>(fastest)</span></label>\n            \t<input class=\"magic-radio\" type=\"radio\" name=\"radio\" value=\"mp4\" id=\"mp4-format\">\n              <label for=\"mp4-format\">MP4 video</label>\n              <input class=\"magic-radio\" type=\"radio\" name=\"radio\" value=\"gif\" id=\"gif-format\">\n              <label for=\"gif-format\">Animated GIF</label>\n\t\t\t\t\t\t\t<input class=\"magic-radio\" type=\"radio\" name=\"radio\" value=\"image\" id=\"image-format\">\n              <label for=\"image-format\">Image</label>\n            </div>\n            <div id=\"download-real\">Download</div>\n        </div>\n\t\t\t\t<div id=\"import-export-modal\">\n\t\t\t\t\t<p class=\"header\">Import & export</p>\n\t\t\t\t\t<p class=\"subtitle\">Save this project locally, or load an existing one.</p>\n\t\t\t\t\t<p class=\"header-2\">Import a project</p>\n\t\t\t\t\t<div id=\"import-project\"><img src=\"assets/import.svg\"> <span>Import</span></div>\n\t\t\t\t\t<p class=\"header-2\">Export this project</p>\n\t\t\t\t\t<div id=\"export-project\"><img src=\"assets/download-icon.svg\"> <span>Export</span></div>\n\t\t\t\t</div>\n        <div id=\"background-overlay\"></div>\n        <div id=\"color-picker\"></div>\n        <div id=\"color-picker-fill\"></div>\n        <div id=\"toolbar\" class=\"noselect\">\n\t\t\t\t\t<div id=\"logo\"><img src=\"assets/logo.svg\"></div>\n\t\t\t\t\t\t<div id=\"tool-wrap\">\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"upload-tool\"><img src=\"assets/uploads.svg\"><p>Uploads</p></div>\n\t\t\t\t\t\t\t<div class=\"tool tool-active\" id=\"shape-tool\"><img src=\"assets/shape-active.svg\"><p>Objects</p></div>\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"image-tool\"><img src=\"assets/image.svg\"><p>Images</p></div>\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"text-tool\"><img src=\"assets/text.svg\"><p>Text</p></div>\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"video-tool\"><img src=\"assets/video.svg\"><p>Videos</p></div>\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"audio-tool\"><img src=\"assets/audio.svg\"><p>Audio</p></div>\n\t\t\t\t\t\t\t<div class=\"tool\" id=\"more-tool\"><img src=\"assets/more-hoz.svg\"><p>More</p></div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"more-over\">\n\t\t\t\t\t<div id=\"upload-lottie\">\n\t\t\t\t\t\t<img src=\"assets/upload-grey.svg\"> Upload Lottie\n\t\t\t\t\t</div>\t\t\t\t\t\t\n\t\t\t\t\t<div id=\"clear-project\">\n\t\t\t\t\t\t<img src=\"assets/clear.svg\"> Clear project\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"behind-browser\"></div>\n        <div id=\"browser\">\n            <div id=\"browser-container\">\n\t\t\t\t\t\t\t<div id=\"search-fixed\"><p class=\"property-title\">Objects</p><img id=\"collapse\" src=\"assets/collapse.svg\"><div id=\"browser-search\"><input placeholder=\"Search...\"><img src=\"assets/search.svg\" id=\"search-icon\"><img src=\"assets/delete.svg\" id=\"delete-search\"><div id=\"search-button\">Go</div></div></div><div id=\"shapes-cont\"><p class=\"row-title\">Shapes</p><div class=\"gallery-row\" id=\"shapes-row\"></div><p class=\"row-title\">Emojis</p><div class=\"gallery-row\" id=\"emojis-row\"></div></div>\n            </div>\n        </div>\n        <div id=\"properties\">\n        <div id=\"properties-overlay\"></div>\n        <div id=\"align\" class=\"align-off\">\n            <div id=\"align-v\">\n                <img class=\"align\" id=\"align-top\" src=\"assets/align-top.svg\" title=\"Align to the top\">\n                <img class=\"align\" id=\"align-center-v\" src=\"assets/align-center-v.svg\" title=\"Align to the center\">\n                <img class=\"align\" id=\"align-bottom\" src=\"assets/align-bottom.svg\" title=\"Align to the bottom\">\n            </div>\n            <div id=\"align-h\">\n                <img class=\"align\" id=\"align-left\" src=\"assets/align-left.svg\" title=\"Align to the left\">\n                <img class=\"align\" id=\"align-center-h\" src=\"assets/align-center-h.svg\" title=\"Align to the center\">\n                <img class=\"align\" id=\"align-right\" src=\"assets/align-right.svg\" title=\"Align to the right\">\n            </div>\n        </div>\n        <hr>\n        <div id=\"object-specific\">\n            <div id=\"canvas-properties\" class=\"panel-section\">\n                <p class=\"property-title\">Canvas settings</p>\n                <table>\n                    <tr>\n                        <th class=\"name-col\">Preset</th>\n                        <th class=\"value-col\"><select id=\"preset\"><option>Dribbble shot</option><option>Facebook post</option></select></th>\n                    </tr>\n                    <tr>\n                        <th class=\"name-col\">Size</th>\n                        <th class=\"value-col\"><div id=\"canvas-w\" class=\"property-input\" data-label='W'><input min=1 type=\"number\" value=1000></div><div id=\"canvas-h\" class=\"property-input\" data-label='H'><input type=\"number\" value=1000 min=1></div></th>\n                    </tr>\n                    <tr>\n                        <th class=\"name-col\">Color</th>\n                        <th class=\"value-col\">\n                            <div id=\"canvas-color\">\n                                <div id=\"color-side\" class=\"color-picker\"></div>\n                                <input value=\"#FFFFFF\" disabled=\"disabled\">\n                            </div>\n                            <div id=\"canvas-color-opacity\" class=\"property-input\" data-label='%'><input type=\"number\" value=100></div>\n                        </th>\n                    </tr>\n                    <tr>\n                        <th class=\"name-col\">Duration</th>\n                        <th class=\"value-col\" id=\"duration-cell\"><div id=\"canvas-duration\" class=\"property-input\" data-label='s'><input type=\"number\" value=15.00></div></th>\n                    </tr>\n                </table>\n            </div>\n        </div>\n        </div>\n        <div id=\"canvas-area\">\n\t\t\t\t\t<div id=\"filters-parent\">\n\t\t\t\t\t\t<div id=\"filters\">\n\t\t\t\t\t\t\t<div id=\"filters-container\">\n\t\t\t\t\t\t\t<div id=\"filters-header\">\n\t\t\t\t\t\t\t\t<div id=\"filters-title\">Filters</div>\n\t\t\t\t\t\t\t\t<img src=\"assets/close.svg\" id=\"filters-close\">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<select id=\"filters-list\">\n\t\t\t\t\t\t\t\t<option value=\"none\">No filter</option>\n\t\t\t\t\t\t\t\t<option value=\"Invert\">Invert</option>\n\t\t\t\t\t\t\t\t<option value=\"Sepia\">Sepia</option>\n\t\t\t\t\t\t\t\t<option value=\"BlackWhite\">Black & white</option>\n\t\t\t\t\t\t\t\t<option value=\"Brownie\">Retro</option>\n\t\t\t\t\t\t\t\t<option value=\"Vintage\">Vintage</option>\n\t\t\t\t\t\t\t\t<option value=\"Technicolor\">Technicolor</option>\n\t\t\t\t\t\t\t\t<option value=\"Kodachrome\">Kodachrome</option>\n\t\t\t\t\t\t\t\t<option value=\"Polaroid\">Polaroid</option>\n\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t<hr>\n\t\t\t\t\t\t\t<div id=\"filters-title\">Adjustments</div>\n\t\t\t\t\t\t\t<div id=\"reset-filters\"><img src=\"assets/repeat.svg\"> Reset</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Brightness</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-brightness\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Contrast</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-contrast\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Saturation</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-saturation\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Vibrance</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-vibrance\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Hue</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-hue\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<hr>\n\t\t\t\t\t\t\t<div id=\"filters-title\">Chroma key</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Status</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"status-toggle\">\n\t\t\t\t\t\t\t\t\t\t<div id=\"status-on\" class=\"status-trigger\">On</div>\n\t\t\t\t\t\t\t\t\t\t<div id=\"status-off\" class=\"status-trigger status-active\">Off</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\" id=\"filter-color\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Color</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"chroma-color\">\n\t\t\t\t\t\t\t\t\t\t<div id=\"color-chroma-side\" class=\"color-picker\"></div>\n\t\t\t\t\t\t\t\t\t\t<input value=\"#FFFFFF\" disabled=\"disabled\">\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Distance</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"chroma-distance\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<hr>\n\t\t\t\t\t\t\t<div id=\"filters-title\">Stylize</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Noise</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-noise\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"filter-row\" id=\"blur\">\n\t\t\t\t\t\t\t\t<th class=\"name-col\">Blur</th>\n\t\t\t\t\t\t\t\t<th class=\"value-col\">\n\t\t\t\t\t\t\t\t\t<div id=\"filter-blur\" class=\"select-filter\"></div>\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div id=\"top-canvas\">\n\t\t\t\t\t\t\t<div id=\"undo\"><img src=\"assets/undo.svg\"> Undo</div>\n\t\t\t\t\t\t\t<div id=\"redo\"><img src=\"assets/undo.svg\"> Redo</div>\n\t\t\t\t\t\t\t<div id=\"other-controls\">\n                <div title=\"Hand tool (Space bar)\" id=\"hand-tool\">\n                    <img src=\"assets/hand-tool.svg\">\n                </div>\n                <div id=\"zoom-level\" title=\"Canvas zoom level\"><span>100%</span><img src=\"assets/arrow.svg\"></div>\n                <div id=\"zoom-options\" class=\"zoom-hidden\">\n                    <div class=\"zoom-options-item\" data-zoom=\"in\">Zoom in</div>\n                    <div class=\"zoom-options-item\" data-zoom=\"out\">Zoom out</div>\n                    <div class=\"zoom-options-item\" data-zoom=\"50\">Zoom to 50%</div>\n                    <div class=\"zoom-options-item\" data-zoom=\"100\">Zoom to 100%</div>\n                    <div class=\"zoom-options-item\" data-zoom=\"200\">Zoom to 200%</div>\n                </div>\n            \t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div id=\"bottom-canvas\">\n\t\t\t\t\t\t\t<a id=\"sponsor\" href=\"https://github.com/sponsors/alyssaxuu\" target=\"_blank\"><img src=\"assets/sponsor.svg\"> Sponsor</a>\n\t\t\t\t\t\t\t<a id=\"alyssa-credit\" href=\"https://twitter.com/alyssaxuu\" target=\"_blank\">Made by <span>Alyssa X</span> <img src=\"assets/alyssaimg.jpeg\"></a>\n\t\t\t\t\t\t</div>\n            <img src=\"assets/replace-image.svg\" id=\"replace-image\">\n\t\t\t\t\t\t<img src=\"assets/loading-image.svg\" id=\"load-image\" class=\"load-media\">\n\t\t\t\t\t\t<img src=\"assets/loading-video.svg\" id=\"load-video\" class=\"load-media\">\n            <canvas id=\"canvas\"></canvas>\n        </div>\n        <div id=\"timeline-handle\"></div>\n        <div id=\"bottom-area\" class=\"noselect\">\n            <div id=\"keyframe-properties\">\n                <div id=\"easing\">\n                    <p class=\"property-title\">Keyframe easing</p>\n                    <select id=\"easing\">\n                        <option value=\"linear\">Linear</option>\n                        <option value=\"easeInQuad\">Ease in</option>\n                        <option value=\"easeOutQuad\">Ease out</option>\n                        <option value=\"easeinOutQuad\">Ease in-out</option>\n                        <option value=\"easeOutInQuad\">Ease out-in</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeInBounce\">Ease in bounce</option>\n                        <option value=\"easeOutBounce\">Ease out bounce</option>\n                        <option value=\"easeinOutBounce\">Ease in-out bounce</option>\n                        <option value=\"easeOutInBouce\">Ease out-in bounce</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeOutInBouce\">Ease out-in bounce</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeInSine\">Ease in sine</option>\n                        <option value=\"easeOutSine\">Ease out sine</option>\n                        <option value=\"easeinOutSine\">Ease in-out sine</option>\n                        <option value=\"easeOutInSine\">Ease out-in sine</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeOutInSine\">Ease out-in sine</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeInCubic\">Ease in cubic</option>\n                        <option value=\"easeOutCubic\">Ease out cubic</option>\n                        <option value=\"easeinOutCubic\">Ease in-out cubic</option>\n                        <option value=\"easeOutInCubic\">Ease out-in cubic</option>\n\t\t\t\t\t\t\t\t\t\t\t\t<option value=\"easeOutInCubic\">Ease out-in cubic</option>\n                    </select>\n                </div>\n            </div>\n            <div id=\"nothing\"></div>\n            <div id=\"layer-list\">\n                <div id=\"layerhead\">LAYERS</div>\n                <div id=\"layer-inner-list\">\n\t\t\t\t\t\t\t\t\t<img src=\"assets/nolayers.svg\" id=\"nolayers\">\n                </div>\n            </div>\n            <div id=\"timearea\">\n                <div id=\"timeline\">\n                    <div id=\"seekarea\"><div id=\"inner-seekarea\"><div id=\"seekevents\"></div></div><div id=\"time-numbers\" class=\"noselect\"></div><div id=\"seek-hover\"></div><div id=\"seekbar\"></div></div>\n                    <div id=\"line-snap\"></div>\n                    <div id=\"inner-timeline\"></div>\n                </div>\n            </div>\n        </div>\n        <div style=\"display:none;\"\">\n            <canvas id=\"canvasrecord\"></canvas>\n        </div>\n        <div id=\"controls\" class=\"noselect\">\n            <img id=\"timeline-big\" src=\"assets/timeline-big.svg\">\n            <div id=\"timeline-zoom\"></div>\n            <img id=\"timeline-small\" src=\"assets/timeline-small.svg\">\n\t\t\t\t\t\t<div id=\"speed\">\n\t\t\t\t\t\t\t<div id=\"speed-settings\">\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"4\">4.0x</div>\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"3\">3.0x</div>\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"2\">2.0x</div>\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"1.5\">1.5x</div>\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"1\">1.0x</div>\n\t\t\t\t\t\t\t\t<div class=\"speed\" data-speed=\"0.5\">0.5x</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<img src=\"assets/zap.svg\"> <span>1.0x</span> <img id=\"speed-arrow\" src=\"assets/arrow.svg\">\n\t\t\t\t\t\t</div>\n            <div id=\"playback\">\n                <div id=\"current-time\">\n                    <input value=\"00:00:00\" readonly>\n                </div>\n                <img src=\"assets/skip.svg\" id=\"skip-backward\">\n                <img src=\"assets/play-button.svg\" id=\"play-button\">\n                <img src=\"assets/skip.svg\" id=\"skip-forward\">\n                <img src=\"assets/repeat.svg\" id=\"loop-toggle\">\n                <div id=\"total-time\">\n                    <input value=\"00:00:00\" readonly>\n                </div>\n            </div>\n\t\t\t\t\t\t<div id=\"controls-right\">\n\t\t\t\t\t\t\t<div id=\"share\"><img src=\"assets/importexport.svg\"> Import & export</div>\n\t\t\t\t\t\t\t<div id=\"download\"><img src=\"assets/download-icon.svg\"> Download</div>\n\t\t\t\t\t\t</div>\n        </div>\n        \n        <video id=\"test-video\"></video>\n        <input id=\"emptyInput\" value=\" \" style=\"opacity:0\">\n\t\t\t\t\n\t\t\t\t\n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n        \n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n        \n        \n"
-        }}
-      />
+      <div className="legacy-root" dangerouslySetInnerHTML={LEGACY_DANGEROUS} />
     </>
   )
 }
