@@ -1,35 +1,41 @@
 import { useEffect, useMemo, useState } from 'react'
-
-function formatError(err) {
-  if (!err) return 'Unknown error'
-  if (typeof err === 'string') return err
-
-  const message = err?.message || String(err)
-  const stack = err?.stack
-  return stack ? `${message}\n\n${stack}` : message
-}
+import { formatError, RUNTIME_ERROR_EVENT } from '../lib/errorReporting.js'
 
 export default function GlobalErrorOverlay() {
   const [events, setEvents] = useState([])
 
   useEffect(() => {
+    const pushEvent = (next) => {
+      setEvents((prev) => {
+        // De-dupe consecutive identical errors.
+        if (prev[0]?.text === next.text && prev[0]?.kind === next.kind) return prev
+        return [next, ...prev].slice(0, 5)
+      })
+    }
+
     const onError = (event) => {
       const errorText = formatError(event?.error || event?.message)
-      setEvents((prev) => [{ kind: 'error', at: Date.now(), text: errorText }, ...prev].slice(0, 5))
+      pushEvent({ kind: 'error', at: Date.now(), text: errorText })
     }
 
     const onUnhandledRejection = (event) => {
       const errorText = formatError(event?.reason)
-      setEvents((prev) =>
-        [{ kind: 'unhandledrejection', at: Date.now(), text: errorText }, ...prev].slice(0, 5)
-      )
+      pushEvent({ kind: 'unhandledrejection', at: Date.now(), text: errorText })
+    }
+
+    const onReportedError = (event) => {
+      const detail = event?.detail
+      if (!detail?.text) return
+      pushEvent({ kind: detail.kind || 'reported', at: detail.at || Date.now(), text: detail.text })
     }
 
     window.addEventListener('error', onError)
     window.addEventListener('unhandledrejection', onUnhandledRejection)
+    window.addEventListener(RUNTIME_ERROR_EVENT, onReportedError)
     return () => {
       window.removeEventListener('error', onError)
       window.removeEventListener('unhandledrejection', onUnhandledRejection)
+      window.removeEventListener(RUNTIME_ERROR_EVENT, onReportedError)
     }
   }, [])
 
