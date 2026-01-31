@@ -1,3 +1,5 @@
+import { RUNTIME_ERROR_EVENT } from '../lib/errorReporting.js'
+
 /**
  * Normalize unknown error-ish values into a consistent shape for logging/UI.
  *
@@ -39,6 +41,10 @@ export function normalizeUnknownError(err) {
 /**
  * Install global error listeners on a target (typically window).
  *
+ * Also listens to our app-level runtime error event (dispatched via
+ * `reportRuntimeError`) so React error boundaries (and other code paths) can
+ * surface a consistent overlay.
+ *
  * @param {{
  *   target: { addEventListener?: Function, removeEventListener?: Function },
  *   onError: (err: {name?: string, message: string, stack?: string}) => void,
@@ -59,12 +65,33 @@ export function installGlobalErrorHandlers({ target, onError }) {
     onError(normalized)
   }
 
+  const onRuntimeError = (event) => {
+    const detail = event?.detail
+    if (!detail?.text) return
+
+    const fullText = String(detail.text)
+
+    const isDev =
+      typeof import.meta !== 'undefined' &&
+      import.meta?.env &&
+      Boolean(import.meta.env.DEV)
+
+    // `formatError` emits: "message\n\nstack" when stack is available.
+    const parts = fullText.split('\n\n')
+    const message = parts[0] || fullText.split('\n')[0] || 'Unknown error'
+    const stack = isDev && parts.length > 1 ? parts.slice(1).join('\n\n') : undefined
+
+    onError({ message, stack })
+  }
+
   target.addEventListener('error', onWindowError)
   target.addEventListener('unhandledrejection', onUnhandledRejection)
+  target.addEventListener(RUNTIME_ERROR_EVENT, onRuntimeError)
 
   return () => {
     target.removeEventListener('error', onWindowError)
     target.removeEventListener('unhandledrejection', onUnhandledRejection)
+    target.removeEventListener(RUNTIME_ERROR_EVENT, onRuntimeError)
   }
 }
 

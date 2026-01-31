@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { RUNTIME_ERROR_EVENT } from '../lib/errorReporting.js'
+
 import {
   createGlobalErrorStore,
   installGlobalErrorHandlers,
@@ -37,15 +39,21 @@ describe('globalErrors', () => {
 
     handlers.error({ error: new Error('e1'), message: 'e1' })
     handlers.unhandledrejection({ reason: new Error('e2') })
+    handlers[RUNTIME_ERROR_EVENT]({ detail: { text: 'e3\n\nstacktrace' } })
 
-    expect(onError).toHaveBeenCalledTimes(2)
+    expect(onError).toHaveBeenCalledTimes(3)
     expect(onError.mock.calls[0][0].message).toBe('e1')
     expect(onError.mock.calls[1][0].message).toBe('e2')
+    expect(onError.mock.calls[2][0].message).toBe('e3')
 
     uninstall()
     expect(target.removeEventListener).toHaveBeenCalledWith('error', expect.any(Function))
     expect(target.removeEventListener).toHaveBeenCalledWith(
       'unhandledrejection',
+      expect.any(Function)
+    )
+    expect(target.removeEventListener).toHaveBeenCalledWith(
+      RUNTIME_ERROR_EVENT,
       expect.any(Function)
     )
   })
