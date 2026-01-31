@@ -310,17 +310,14 @@ const LEGACY_MARKUP = `
                         <option value="easeOutBounce">Ease out bounce</option>
                         <option value="easeinOutBounce">Ease in-out bounce</option>
                         <option value="easeOutInBouce">Ease out-in bounce</option>
-												<option value="easeOutInBouce">Ease out-in bounce</option>
 												<option value="easeInSine">Ease in sine</option>
                         <option value="easeOutSine">Ease out sine</option>
                         <option value="easeinOutSine">Ease in-out sine</option>
                         <option value="easeOutInSine">Ease out-in sine</option>
-												<option value="easeOutInSine">Ease out-in sine</option>
 												<option value="easeInCubic">Ease in cubic</option>
                         <option value="easeOutCubic">Ease out cubic</option>
                         <option value="easeinOutCubic">Ease in-out cubic</option>
                         <option value="easeOutInCubic">Ease out-in cubic</option>
-												<option value="easeOutInCubic">Ease out-in cubic</option>
                     </select>
                 </div>
             </div>
