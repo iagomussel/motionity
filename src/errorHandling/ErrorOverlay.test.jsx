@@ -17,6 +17,7 @@ describe('ErrorOverlay', () => {
 
     expect(html).toContain('Something went wrong')
     expect(html).toContain('Kaboom')
-    expect(html).toContain('Reload')
+    expect(html).toContain('Reload Page')
+    expect(html).toContain('Copy Error')
   })
 })
