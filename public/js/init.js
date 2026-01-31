@@ -12,7 +12,7 @@ var checkstatus = false;
 let db = new Localbase('db');
 var wip = false;
 var paused = true;
-var loopPlayback = false;
+var loopPlayback = localStorage.getItem('loopPlayback') === 'true';
 var currenttime = 0;
 var timelinetime = 5;
 const offset_left = 20;

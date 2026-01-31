@@ -403,6 +403,12 @@ function LegacyEditor() {
       .then(() => {
         if (cancelled) return
         setStatus((s) => ({ ...s, phase: 'ready', error: null }))
+        
+        // Restore loop button state if saved in localStorage (handled by init.js)
+        // We need to update the UI class here since init.js runs before DOM might be ready or before this component finishes
+        if (window.loopPlayback && window.$) {
+          window.$('#loop-toggle').addClass('loop-active')
+        }
       })
       .catch((err) => {
         if (cancelled) return

@@ -643,6 +643,7 @@ $(document).ready(function () {
 
   $(document).on('click', '#loop-toggle', function () {
     loopPlayback = !loopPlayback;
+    localStorage.setItem('loopPlayback', loopPlayback);
     if (loopPlayback) {
       $(this).addClass('loop-active');
     } else {
