@@ -3,8 +3,16 @@ import { formatError, RUNTIME_ERROR_EVENT } from '../lib/errorReporting.js'
 
 export default function GlobalErrorOverlay() {
   const [events, setEvents] = useState([])
+  const isDev = import.meta.env.DEV
 
   useEffect(() => {
+    const toDisplayText = (text) => {
+      const full = String(text || '')
+      if (isDev) return full
+      // In production, keep it minimal (no stack traces).
+      return full.split('\n')[0]
+    }
+
     const pushEvent = (next) => {
       setEvents((prev) => {
         // De-dupe consecutive identical errors.
@@ -14,19 +22,23 @@ export default function GlobalErrorOverlay() {
     }
 
     const onError = (event) => {
-      const errorText = formatError(event?.error || event?.message)
+      const errorText = toDisplayText(formatError(event?.error || event?.message))
       pushEvent({ kind: 'error', at: Date.now(), text: errorText })
     }
 
     const onUnhandledRejection = (event) => {
-      const errorText = formatError(event?.reason)
+      const errorText = toDisplayText(formatError(event?.reason))
       pushEvent({ kind: 'unhandledrejection', at: Date.now(), text: errorText })
     }
 
     const onReportedError = (event) => {
       const detail = event?.detail
       if (!detail?.text) return
-      pushEvent({ kind: detail.kind || 'reported', at: detail.at || Date.now(), text: detail.text })
+      pushEvent({
+        kind: detail.kind || 'reported',
+        at: detail.at || Date.now(),
+        text: toDisplayText(detail.text),
+      })
     }
 
     window.addEventListener('error', onError)
@@ -37,7 +49,7 @@ export default function GlobalErrorOverlay() {
       window.removeEventListener('unhandledrejection', onUnhandledRejection)
       window.removeEventListener(RUNTIME_ERROR_EVENT, onReportedError)
     }
-  }, [])
+  }, [isDev])
 
   const latest = events[0]
 
