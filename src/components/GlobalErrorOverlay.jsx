@@ -88,6 +88,20 @@ export default function GlobalErrorOverlay() {
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 8,
+              background: 'transparent',
+              color: 'inherit',
+              padding: '6px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            Reload
+          </button>
+          <button
+            type="button"
             onClick={() => {
               if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(latest.text)
             }}
