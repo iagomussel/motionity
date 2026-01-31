@@ -42,11 +42,13 @@ export function loadLegacyScripts(scripts, onProgress) {
       const total = scripts.length
       for (let i = 0; i < scripts.length; i += 1) {
         const src = scripts[i]
+        // Report what we're about to load.
         onProgress?.({ loaded: i, total, src })
         // eslint-disable-next-line no-await-in-loop
         await loadScript(src)
+        // Report that the script has loaded successfully.
+        onProgress?.({ loaded: i + 1, total, src })
       }
-      onProgress?.({ loaded: total, total, src: scripts[scripts.length - 1] })
       state.loaded = true
       state.error = null
     } catch (err) {
