@@ -6,25 +6,60 @@ function getGlobal() {
       loaded: false,
       loading: null,
       error: null,
+      scriptPromises: {},
     }
   }
   return window[globalKey]
 }
 
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
+function loadScript(src, { timeoutMs = 30000 } = {}) {
+  const state = getGlobal()
+  state.scriptPromises ||= {}
+
+  if (state.scriptPromises[src]) return state.scriptPromises[src]
+
+  state.scriptPromises[src] = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`)
+    if (existing?.dataset?.legacyLoaded === 'true') {
       resolve()
       return
     }
 
-    const script = document.createElement('script')
+    const script = existing || document.createElement('script')
     script.src = src
     script.async = false
-    script.onload = () => resolve()
-    script.onerror = (e) => reject(new Error(`Failed to load script: ${src}`))
-    document.body.appendChild(script)
+
+    let done = false
+    const finish = (err) => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      if (err) {
+        // On failure, allow future retries.
+        delete state.scriptPromises[src]
+        try {
+          script.remove()
+        } catch {
+          // ignore
+        }
+        reject(err)
+        return
+      }
+      script.dataset.legacyLoaded = 'true'
+      resolve()
+    }
+
+    const timer = setTimeout(() => {
+      finish(new Error(`Timed out loading script after ${timeoutMs}ms: ${src}`))
+    }, timeoutMs)
+
+    script.onload = () => finish()
+    script.onerror = () => finish(new Error(`Failed to load script: ${src}`))
+
+    if (!existing) document.body.appendChild(script)
   })
+
+  return state.scriptPromises[src]
 }
 
 /**
@@ -44,7 +79,6 @@ export function loadLegacyScripts(scripts, onProgress) {
         const src = scripts[i]
         // Report what we're about to load.
         onProgress?.({ loaded: i, total, src })
-        // eslint-disable-next-line no-await-in-loop
         await loadScript(src)
         // Report that the script has loaded successfully.
         onProgress?.({ loaded: i + 1, total, src })
@@ -67,4 +101,5 @@ export function resetLegacyLoader() {
   state.loaded = false
   state.loading = null
   state.error = null
+  state.scriptPromises = {}
 }
