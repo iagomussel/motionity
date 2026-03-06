@@ -1,0 +1,82 @@
+.panel {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel-sm { border-radius: var(--radius-sm); }
+.panel-md { border-radius: var(--radius-md); }
+.panel-lg { border-radius: var(--radius-lg); }
+
+/* ── Elevation variants ── */
+.elevated-none {
+  box-shadow: none;
+}
+.elevated-sm {
+  box-shadow: var(--shadow-sm);
+}
+.elevated-md {
+  box-shadow: var(--shadow-md);
+}
+.elevated-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.body-padded {
+  padding: var(--space-4);
+}
+
+/* ── Section inside panel ── */
+.section {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.section:last-child {
+  border-bottom: none;
+}
+
+.section-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-2);
+  user-select: none;
+}

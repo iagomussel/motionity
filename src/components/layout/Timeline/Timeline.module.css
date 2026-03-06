@@ -1,0 +1,231 @@
+.timeline {
+  height: var(--timeline-height);
+  min-height: var(--timeline-min-height);
+  background: var(--color-timeline-bg);
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  resize: vertical; /* allow user to resize height */
+}
+
+/* ── Top bar: controls + time ruler ── */
+.controls-bar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+}
+
+.play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-500);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+.play-btn:hover { background: var(--color-brand-400); }
+
+.transport-btns {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.transport-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  font-size: 11px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.transport-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-overlay);
+}
+
+.timecode {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-2);
+  min-width: 72px;
+}
+
+.duration {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-disabled);
+}
+
+.zoom-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ── Tracks area ── */
+.tracks-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Track labels column */
+.track-labels {
+  width: 120px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border-subtle);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.track-label {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+  gap: var(--space-2);
+}
+
+.track-label-text {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-type-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+  color: var(--color-text-disabled);
+}
+
+/* Track content column */
+.track-content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.track-row {
+  height: 36px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-track-bg);
+  position: relative;
+}
+
+.track-row:nth-child(even) {
+  background: color-mix(in srgb, var(--color-track-bg) 90%, var(--color-surface-base));
+}
+
+/* Clip block */
+.clip {
+  position: absolute;
+  top: 4px;
+  height: 28px;
+  background: var(--color-track-clip);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.clip:hover {
+  background: var(--color-track-clip-hover);
+}
+
+.clip.selected {
+  box-shadow: 0 0 0 2px var(--color-brand-400);
+}
+
+.clip-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255,255,255,0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Playhead ── */
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-playhead);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-playhead);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+/* ── Ruler ── */
+.ruler {
+  height: 20px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-base);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty-tracks {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-sm);
+  gap: var(--space-2);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .timeline {
+    height: var(--timeline-min-height);
+  }
+  .track-labels {
+    width: 80px;
+  }
+}

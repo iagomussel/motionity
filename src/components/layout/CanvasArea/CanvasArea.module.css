@@ -1,0 +1,149 @@
+.canvas-area {
+  flex: 1;
+  background: var(--color-surface-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Checkerboard bg (visible outside canvas) ── */
+.canvas-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(45deg, var(--color-surface-raised) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--color-surface-raised) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--color-surface-raised) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--color-surface-raised) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Canvas frame ── */
+.canvas-frame {
+  position: relative;
+  box-shadow: var(--shadow-xl), 0 0 0 1px var(--color-border);
+  background: #000;
+  z-index: 1;
+  transition: transform var(--transition-normal);
+}
+
+/* ── Toolbar overlay (floating above canvas) ── */
+.canvas-toolbar {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-1) var(--space-2);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-raised);
+  user-select: none;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.toolbar-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.toolbar-btn.active {
+  color: var(--color-text-brand);
+  background: rgba(124, 58, 237, 0.15);
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin: 0 var(--space-1);
+}
+
+/* ── Zoom indicator ── */
+.zoom-indicator {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-3);
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  z-index: var(--z-raised);
+  pointer-events: none;
+}
+
+/* ── Canvas dimensions info ── */
+.canvas-info {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-disabled);
+  z-index: var(--z-raised);
+  pointer-events: none;
+}
+
+/* ── Loading state ── */
+.loading {
+  position: absolute;
+  inset: 0;
+  background: var(--color-surface-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  z-index: var(--z-overlay);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-brand-500);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.loading-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

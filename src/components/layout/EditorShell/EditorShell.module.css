@@ -1,0 +1,76 @@
+/* ── EditorShell ── Full-screen editor layout ── */
+.editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100dvw;
+  overflow: hidden;
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+/* ── Main area (between topbar and timeline) ── */
+.main-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Overlay for mobile panel backdrop ── */
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: calc(var(--z-overlay) - 1);
+}
+
+/* ── Mobile bottom navigation bar ── */
+.mobile-nav {
+  display: none;
+  height: 52px;
+  background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border-subtle);
+  align-items: center;
+  justify-content: space-around;
+  flex-shrink: 0;
+  z-index: var(--z-sticky);
+}
+
+.mobile-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-sans);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: color var(--transition-fast);
+}
+
+.mobile-nav-btn.active {
+  color: var(--color-text-brand);
+}
+
+.mobile-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mobile-nav {
+    display: flex;
+  }
+
+  .backdrop.visible {
+    display: block;
+  }
+}
