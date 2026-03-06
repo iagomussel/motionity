@@ -1,25 +1,21 @@
+/* ─── Motionity Legacy Theme — mapped to design tokens ─── */
 :root {
-  --panel-back: #141629;
-  --panel-stroke: #222544;
-  --main-back: #070a1b;
-  --main-text-color: #fff;
-  --secondary-text-color: #a0a5d0;
-  --input-color: #22233e;
-  --accent-color: #166ef1;
-  --button-hover: #262746;
+  /* surfaces */
+  --panel-back:   #111118;   /* --color-surface-raised  */
+  --panel-stroke: #2A2A3E;   /* --color-border           */
+  --main-back:    #0A0A0F;   /* --color-surface-base     */
+
+  /* text */
+  --main-text-color:       #F8F8FF;  /* --color-text-primary    */
+  --secondary-text-color:  #9898B8;  /* --color-text-secondary  */
+
+  /* inputs & interactive */
+  --input-color:   #1A1A26;  /* --color-surface-overlay */
+  --button-hover:  #22223A;  /* --color-surface-hover   */
+
+  /* brand accent — violet instead of legacy blue */
+  --accent-color:  #7C3AED;  /* --color-brand-500       */
 }
-/*
-:root {
-    --panel-back: #FFF;
-    --panel-stroke: #EDEFF3;
-    --main-back: #F8F9FC;
-    --main-text-color: #333333;
-    --secondary-text-color: #a0a5d0;
-    --input-color: #EDEFF3;
-    --accent-color: #166EF1;
-    --button-hover: #262746;
-}
-*/
 html,
 body {
   margin: 0px;

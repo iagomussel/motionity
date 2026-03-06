@@ -26,18 +26,6 @@ const LEGACY_SCRIPTS = [
   '/js/events.js',
 ]
 
-const overlayStyle = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(10, 12, 16, 0.85)',
-  color: '#fff',
-  zIndex: 999999,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-}
-
 // Keeping this giant HTML blob outside the component prevents re-allocating it on every render
 // (which happens several times while scripts load).
 const LEGACY_MARKUP = `
@@ -378,7 +366,7 @@ const LEGACY_MARKUP = `
 
 const LEGACY_DANGEROUS = { __html: LEGACY_MARKUP }
 
-function LegacyEditor() {
+function LegacyEditor({ onReady }) {
   const [status, setStatus] = useState({
     phase: 'loading',
     loaded: 0,
@@ -403,9 +391,9 @@ function LegacyEditor() {
       .then(() => {
         if (cancelled) return
         setStatus((s) => ({ ...s, phase: 'ready', error: null }))
-        
-        // Restore loop button state if saved in localStorage (handled by init.js)
-        // We need to update the UI class here since init.js runs before DOM might be ready or before this component finishes
+        onReady?.()
+
+        // Restore loop button state if saved in localStorage
         if (window.loopPlayback && window.$) {
           window.$('#loop-toggle').addClass('loop-active')
         }
@@ -430,77 +418,171 @@ function LegacyEditor() {
   return (
     <>
       {status.phase !== 'ready' && (
-        <div style={overlayStyle} role="status" aria-live="polite">
-          <div style={{ width: 520, maxWidth: '90vw' }}>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Loading editor…</div>
-
-            {status.phase === 'loading' && (
-              <>
-                <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 10 }}>
-                  {status.src || 'Starting…'}
-                </div>
-                <div
-                  style={{
-                    height: 10,
-                    background: 'rgba(255,255,255,0.15)',
-                    borderRadius: 999,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${percent}%`,
-                      background: '#51B9F9',
-                      transition: 'width 200ms ease',
-                    }}
-                  />
-                </div>
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>{percent}%</div>
-              </>
-            )}
-
-            {status.phase === 'error' && (
-              <>
-                <div style={{ marginTop: 8, color: '#ffb3b3', fontSize: 13 }}>
-                  Failed to load editor scripts.
-                </div>
-                <pre
-                  style={{
-                    marginTop: 8,
-                    whiteSpace: 'pre-wrap',
-                    fontSize: 12,
-                    opacity: 0.9,
-                    background: 'rgba(0,0,0,0.25)',
-                    padding: 10,
-                    borderRadius: 8,
-                  }}
-                >
-                  {String(status.error?.message || status.error)}
-                </pre>
-                <button
-                  type="button"
-                  onClick={retry}
-                  style={{
-                    marginTop: 12,
-                    padding: '10px 12px',
-                    borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    background: 'rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Retry
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        <LoadingScreen
+          phase={status.phase}
+          percent={percent}
+          src={status.src}
+          error={status.error}
+          onRetry={retry}
+        />
       )}
-
       <div className="legacy-root" dangerouslySetInnerHTML={LEGACY_DANGEROUS} />
     </>
+  )
+}
+
+function LoadingScreen({ phase, percent, src, error, onRetry }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={phase === 'error' ? 'Failed to load editor' : 'Loading editor'}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--color-surface-base, #0A0A0F)',
+        color: 'var(--color-text-primary, #F8F8FF)',
+        zIndex: 999999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '32px',
+        fontFamily: 'var(--font-family-sans, Inter, system-ui, sans-serif)',
+      }}
+    >
+      {/* Logo mark */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        <div
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, #7C3AED, #EC4899)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#fff',
+            boxShadow: '0 0 32px rgba(124,58,237,0.45)',
+          }}
+        >
+          M
+        </div>
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Motionity
+        </div>
+      </div>
+
+      {/* Status content */}
+      <div style={{ width: 380, maxWidth: '88vw' }}>
+        {phase === 'loading' && (
+          <>
+            <div
+              style={{
+                fontSize: 13,
+                color: 'var(--color-text-secondary, #9898B8)',
+                marginBottom: 12,
+                textAlign: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={src}
+            >
+              {src ? `Loading ${src.split('/').pop()}…` : 'Starting…'}
+            </div>
+            {/* Progress bar */}
+            <div
+              style={{
+                height: 6,
+                background: 'var(--color-border, #2A2A3E)',
+                borderRadius: 999,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${percent}%`,
+                  background: 'linear-gradient(90deg, #7C3AED, #EC4899)',
+                  borderRadius: 999,
+                  transition: 'width 200ms ease',
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 8,
+                fontSize: 12,
+                color: 'var(--color-text-disabled, #4A4A6A)',
+              }}
+            >
+              <span>Loading editor…</span>
+              <span>{percent}%</span>
+            </div>
+          </>
+        )}
+
+        {phase === 'error' && (
+          <div style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: 'var(--color-error, #EF4444)',
+                marginBottom: 12,
+              }}
+            >
+              Failed to load editor scripts.
+            </div>
+            <pre
+              style={{
+                textAlign: 'left',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                fontSize: 11,
+                color: 'var(--color-text-secondary, #9898B8)',
+                background: 'var(--color-surface-overlay, #1A1A26)',
+                border: '1px solid var(--color-border, #2A2A3E)',
+                padding: '10px 12px',
+                borderRadius: 8,
+                marginBottom: 16,
+                maxHeight: 120,
+                overflow: 'auto',
+              }}
+            >
+              {String(error?.message || error)}
+            </pre>
+            <button
+              type="button"
+              onClick={onRetry}
+              style={{
+                padding: '10px 24px',
+                borderRadius: 20,
+                border: 'none',
+                background: '#7C3AED',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

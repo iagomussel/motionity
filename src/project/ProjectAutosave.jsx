@@ -44,25 +44,29 @@ async function tryAutoLoadOnce() {
 
 /**
  * Glue component: provides Ctrl/Cmd+S save to localStorage and auto-loads last saved project.
+ *
+ * @param {boolean}  enabled      — only activates hotkey after the legacy editor is ready
+ * @param {Function} onSaveStart  — called when a save begins
+ * @param {Function} onSaveEnd    — called when a save completes (ok or error)
  */
-export default function ProjectAutosave() {
-  const [status, setStatus] = useState('idle')
+export default function ProjectAutosave({ enabled = true, onSaveStart, onSaveEnd }) {
   const didAutoloadRef = useRef(false)
 
   useEffect(() => {
     const onKeyDown = (e) => {
+      if (!enabled) return
       if (!isSaveShortcut(e)) return
       e.preventDefault()
-      setStatus('saving')
+      onSaveStart?.()
       Promise.resolve()
         .then(() => trySaveFromLegacyDb())
-        .then((res) => setStatus(res.ok ? 'saved' : 'idle'))
-        .catch(() => setStatus('idle'))
+        .then(() => onSaveEnd?.())
+        .catch(() => onSaveEnd?.())
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [enabled, onSaveStart, onSaveEnd])
 
   useEffect(() => {
     // Auto-load silently once, after legacy DB is ready.
@@ -79,7 +83,5 @@ export default function ProjectAutosave() {
     return () => window.clearInterval(interval)
   }, [])
 
-  // We keep UI minimal for now; the legacy editor owns the UI.
-  // Status is left here for future surface (toast/badge).
-  return <div style={{ display: 'none' }}>{status}</div>
+  return null
 }
