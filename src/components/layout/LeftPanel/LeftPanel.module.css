@@ -123,6 +123,7 @@
     top: var(--topbar-height);
     bottom: 0;
     transform: translateX(-100%);
+    transition: transform var(--transition-normal);
     z-index: var(--z-overlay);
     box-shadow: var(--shadow-lg);
     width: var(--leftpanel-width) !important;
@@ -131,4 +132,10 @@
     transform: translateX(0);
   }
   .tab-label { display: block !important; }
+
+  /* Larger touch targets for tabs on mobile */
+  .tab {
+    padding: var(--space-3) var(--space-4);
+    min-height: 44px;
+  }
 }

@@ -63,8 +63,9 @@
     bottom: 0;
     right: 0;
     left: 0;
-    height: 60%;
+    height: 55%;
     transform: translateY(100%);
+    transition: transform var(--transition-normal);
     border-left: none;
     border-top: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;

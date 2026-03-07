@@ -147,3 +147,29 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  /* Minimum 44px touch targets */
+  .toolbar-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .canvas-toolbar {
+    padding: var(--space-1) var(--space-1);
+    gap: 0;
+  }
+
+  /* Hide secondary overlays to reduce clutter */
+  .canvas-info {
+    display: none;
+  }
+
+  .zoom-indicator {
+    bottom: var(--space-2);
+    right: var(--space-2);
+    font-size: 10px;
+  }
+}

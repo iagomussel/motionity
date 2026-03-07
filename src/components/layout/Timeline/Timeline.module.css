@@ -228,4 +228,27 @@
   .track-labels {
     width: 80px;
   }
+
+  /* Minimum 44px touch targets on mobile */
+  .play-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .transport-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .controls-bar {
+    padding: 0 var(--space-2);
+    gap: var(--space-2);
+    height: 52px;
+  }
+
+  .zoom-controls {
+    display: none;
+  }
 }

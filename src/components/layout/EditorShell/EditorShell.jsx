@@ -110,6 +110,8 @@ export function EditorShell({
 
 function cloneWithProps(element, extraProps) {
   if (!element) return null
+  // Avoid passing unknown props to DOM elements (string type = native element).
+  if (typeof element.type === 'string') return element
   return cloneElement(element, extraProps)
 }
 

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import styles from './CanvasArea.module.css'
 
 const TOOLS = [
@@ -8,12 +9,14 @@ const TOOLS = [
   { id: 'draw',     icon: '✏', label: 'Draw (P)' },
 ]
 
+const FIT_PADDING = 0.88 // leave ~12% breathing room around canvas
+
 /**
  * CanvasArea — the main creative canvas region.
  *
  * @param {number}  canvasWidth   — project width in px
  * @param {number}  canvasHeight  — project height in px
- * @param {number}  zoom          — zoom level (1 = 100%)
+ * @param {number}  zoom          — zoom multiplier on top of auto-fit (1 = no extra zoom)
  * @param {string}  activeTool    — id of active tool
  * @param {boolean} isLoading
  * @param {Function} onToolChange
@@ -30,13 +33,34 @@ export function CanvasArea({
   canvasRef,
   children,
 }) {
-  const zoomPercent = Math.round(zoom * 100)
+  const containerRef = useRef(null)
+  const [fitZoom, setFitZoom] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      const scale = Math.min(width / canvasWidth, height / canvasHeight) * FIT_PADDING
+      setFitZoom(Math.max(0.05, scale))
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [canvasWidth, canvasHeight])
+
+  const effectiveZoom = fitZoom * zoom
+  const zoomPercent = Math.round(effectiveZoom * 100)
 
   return (
-    <main className={styles['canvas-area']} role="main" aria-label="Canvas editor">
+    <main
+      ref={containerRef}
+      className={styles['canvas-area']}
+      role="main"
+      aria-label="Canvas editor"
+    >
       {/* Floating toolbar */}
       <div className={styles['canvas-toolbar']} role="toolbar" aria-label="Drawing tools">
-        {TOOLS.map((tool, i) => (
+        {TOOLS.map((tool) => (
           <button
             key={tool.id}
             className={[
@@ -58,8 +82,8 @@ export function CanvasArea({
         ref={canvasRef}
         className={styles['canvas-frame']}
         style={{
-          width: canvasWidth * zoom,
-          height: canvasHeight * zoom,
+          width: canvasWidth * effectiveZoom,
+          height: canvasHeight * effectiveZoom,
         }}
         aria-label={`Canvas ${canvasWidth}×${canvasHeight}`}
       >

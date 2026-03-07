@@ -1,6 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { CanvasArea } from './CanvasArea'
+
+// ResizeObserver is not available in jsdom — provide a no-op mock so the
+// auto-fit hook can register without throwing. fitZoom stays at its initial
+// value of 1, so effectiveZoom = 1 * zoom = zoom (same as the old behaviour).
+beforeEach(() => {
+  global.ResizeObserver = vi.fn(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }))
+})
 
 describe('CanvasArea', () => {
   it('renders with role=main', () => {

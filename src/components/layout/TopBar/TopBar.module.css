@@ -117,4 +117,12 @@
   .actions {
     gap: var(--space-1);
   }
+  /* Hide undo/redo on very small screens to save space */
+  .history {
+    display: none;
+  }
+  .project-name-input {
+    max-width: 120px;
+    font-size: var(--font-size-xs);
+  }
 }

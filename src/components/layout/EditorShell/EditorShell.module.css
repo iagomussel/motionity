@@ -65,12 +65,21 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 768px) {
+
+/* Tablet: show nav so right panel drawer is reachable */
+@media (max-width: 1024px) {
   .mobile-nav {
     display: flex;
   }
 
   .backdrop.visible {
     display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-nav-btn {
+    min-width: 64px;
+    min-height: 44px;
   }
 }
