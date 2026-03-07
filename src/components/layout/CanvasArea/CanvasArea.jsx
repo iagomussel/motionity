@@ -87,7 +87,15 @@ export function CanvasArea({
         }}
         aria-label={`Canvas ${canvasWidth}×${canvasHeight}`}
       >
-        {children}
+        {children ?? (
+          <div className={styles['canvas-empty']} aria-hidden="true">
+            <svg className={styles['canvas-empty-icon']} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <rect x="3" y="3" width="18" height="14" rx="2" />
+              <path d="M8 21h8M12 17v4" />
+            </svg>
+            <span className={styles['canvas-empty-text']}>Add elements from the left panel</span>
+          </div>
+        )}
 
         {/* Watermark — appears on canvas and burns into exports */}
         <a

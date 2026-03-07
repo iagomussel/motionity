@@ -46,6 +46,19 @@ function App() {
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen]   = useState(false)
 
+  // Space → play / pause (ignore when focus is on an input)
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setIsPlaying(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   // Ctrl/Cmd+S → save to localStorage
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -68,8 +81,12 @@ function App() {
   }, [projectName])
 
   const handleProjectNameChange = useCallback((name) => setProjectName(name), [])
-  const handleExport = useCallback(() => setExportModalOpen(true), [])
-  const handleShare  = useCallback(() => setShareModalOpen(true), [])
+  const handleExport  = useCallback(() => setExportModalOpen(true), [])
+  const handleShare   = useCallback(() => setShareModalOpen(true), [])
+  const handlePlay    = useCallback(() => setIsPlaying(true), [])
+  const handlePause   = useCallback(() => setIsPlaying(false), [])
+  const handleSkipStart = useCallback(() => setCurrentTime(0), [])
+  const handleSkipEnd   = useCallback(() => setCurrentTime(duration), [duration])
 
   return (
     <>
@@ -92,10 +109,10 @@ function App() {
             currentTime={currentTime}
             duration={duration}
             tracks={tracks}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onSkipToStart={() => setCurrentTime(0)}
-            onSkipToEnd={() => setCurrentTime(duration)}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onSkipToStart={handleSkipStart}
+            onSkipToEnd={handleSkipEnd}
             onSeek={setCurrentTime}
           />
         }
