@@ -7,6 +7,8 @@ import { RightPanel } from './components/layout/RightPanel/RightPanel'
 import { CanvasArea } from './components/layout/CanvasArea/CanvasArea'
 import { Timeline } from './components/layout/Timeline/Timeline'
 import { SaveToast } from './components/ui/SaveToast/SaveToast'
+import { ExportModal } from './components/ui/ExportModal/ExportModal'
+import { ShareModal } from './components/ui/ShareModal/ShareModal'
 import GlobalErrorOverlay from './errorHandling/GlobalErrorOverlay.jsx'
 import { isSaveShortcut } from './project/hotkeys.js'
 import { saveCurrentProject, loadCurrentProject } from './project/storage.js'
@@ -35,12 +37,14 @@ function App() {
     }
   })
 
-  const [saveStatus, setSaveStatus] = useState('idle')
-  const [activeTool, setActiveTool]   = useState('select')
-  const [isPlaying, setIsPlaying]     = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration]                    = useState(DEFAULT_DURATION)
-  const [tracks]                      = useState([])
+  const [saveStatus, setSaveStatus]       = useState('idle')
+  const [activeTool, setActiveTool]       = useState('select')
+  const [isPlaying, setIsPlaying]         = useState(false)
+  const [currentTime, setCurrentTime]     = useState(0)
+  const [duration]                        = useState(DEFAULT_DURATION)
+  const [tracks]                          = useState([])
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [shareModalOpen, setShareModalOpen]   = useState(false)
 
   // Ctrl/Cmd+S → save to localStorage
   useEffect(() => {
@@ -64,6 +68,8 @@ function App() {
   }, [projectName])
 
   const handleProjectNameChange = useCallback((name) => setProjectName(name), [])
+  const handleExport = useCallback(() => setExportModalOpen(true), [])
+  const handleShare  = useCallback(() => setShareModalOpen(true), [])
 
   return (
     <>
@@ -74,6 +80,8 @@ function App() {
           <TopBar
             projectName={projectName}
             onProjectNameChange={handleProjectNameChange}
+            onExport={handleExport}
+            onShare={handleShare}
           />
         }
         leftPanel={<LeftPanel tabs={LEFT_TABS} />}
@@ -99,6 +107,17 @@ function App() {
       </EditorShell>
 
       <SaveToast status={saveStatus} />
+
+      <ExportModal
+        open={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+      />
+
+      <ShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        projectName={projectName}
+      />
     </>
   )
 }

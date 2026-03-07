@@ -88,6 +88,17 @@ export function CanvasArea({
         aria-label={`Canvas ${canvasWidth}×${canvasHeight}`}
       >
         {children}
+
+        {/* Watermark — appears on canvas and burns into exports */}
+        <a
+          href="https://huntermussel.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.watermark}
+          aria-label="Made with Motionity by Iago Mussel"
+        >
+          Made with Motionity
+        </a>
       </div>
 
       {/* Zoom indicator */}

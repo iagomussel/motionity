@@ -117,6 +117,25 @@
   pointer-events: none;
 }
 
+/* ── Watermark ── */
+.watermark {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-size: 10px;
+  font-family: var(--font-family-sans);
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  pointer-events: auto;
+  transition: color var(--transition-fast);
+  z-index: 2;
+  user-select: none;
+}
+.watermark:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* ── Loading state ── */
 .loading {
   position: absolute;
