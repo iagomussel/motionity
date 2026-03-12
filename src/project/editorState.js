@@ -1,28 +1,6 @@
 import { getAnimatableProperty, isAnimatableProperty } from './propertyRegistry.js'
 import { resolveObjectAtTime } from './animationEngine.js'
 
-function cloneProject(project) {
-  return {
-    ...project,
-    playback: { ...project.playback },
-    tracks: project.tracks.map((track) => ({
-      ...track,
-      clips: track.clips.map((clip) => ({ ...clip })),
-    })),
-    objects: project.objects.map((object) => ({
-      ...object,
-      base: { ...object.base },
-      keyframes: Object.fromEntries(
-        Object.entries(object.keyframes).map(([prop, keys]) => [
-          prop,
-          keys.map((key) => ({ ...key })),
-        ])
-      ),
-      visibleRange: { ...object.visibleRange },
-    })),
-  }
-}
-
 function clampTime(project, time) {
   return Math.min(project.duration, Math.max(0, time))
 }
@@ -34,149 +12,182 @@ function normalizeNumeric(value, fallback = 0) {
 }
 
 function sortKeyframes(keys) {
-  return keys.sort((a, b) => a.t - b.t)
+  return keys.slice().sort((a, b) => a.t - b.t)
+}
+
+function cloneObject(object) {
+  return {
+    ...object,
+    base: { ...object.base },
+    textStyle: object.textStyle ? { ...object.textStyle } : undefined,
+    keyframes: { ...object.keyframes },
+    visibleRange: { ...object.visibleRange },
+  }
+}
+
+function replaceObject(project, objectId, updater) {
+  const idx = project.objects.findIndex((o) => o.id === objectId)
+  if (idx < 0) return project
+  const cloned = cloneObject(project.objects[idx])
+  updater(cloned)
+  const objects = project.objects.slice()
+  objects[idx] = cloned
+  return { ...project, objects }
 }
 
 export function setCurrentTime(project, time) {
-  const next = cloneProject(project)
-  next.currentTime = clampTime(next, Number(time) || 0)
-  return next
+  const t = clampTime(project, Number(time) || 0)
+  if (t === project.currentTime) return project
+  return { ...project, currentTime: t }
 }
 
 export function togglePlayback(project, forceValue) {
-  const next = cloneProject(project)
   const shouldPlay =
-    typeof forceValue === 'boolean'
-      ? forceValue
-      : !next.playback.isPlaying
-  next.playback.isPlaying = shouldPlay
-  return next
+    typeof forceValue === 'boolean' ? forceValue : !project.playback.isPlaying
+  if (shouldPlay === project.playback.isPlaying) return project
+  return {
+    ...project,
+    playback: { ...project.playback, isPlaying: shouldPlay },
+  }
 }
 
 export function selectObject(project, objectId) {
-  const next = cloneProject(project)
-  const exists = next.objects.some((object) => object.id === objectId)
-  next.selectedObjectId = exists ? objectId : null
-  return next
+  const exists = project.objects.some((o) => o.id === objectId)
+  const next = exists ? objectId : null
+  if (next === project.selectedObjectId) return project
+  return { ...project, selectedObjectId: next }
 }
 
 export function selectProperty(project, propertyId) {
-  const next = cloneProject(project)
-  if (isAnimatableProperty(propertyId)) {
-    next.selectedPropertyId = propertyId
-  }
-  return next
-}
-
-function getObject(project, objectId) {
-  return project.objects.find((object) => object.id === objectId) ?? null
+  if (!isAnimatableProperty(propertyId)) return project
+  if (propertyId === project.selectedPropertyId) return project
+  return { ...project, selectedPropertyId: propertyId }
 }
 
 export function updateObjectBaseProperty(project, { objectId, propertyId, value }) {
   if (!isAnimatableProperty(propertyId)) return project
-  const next = cloneProject(project)
-  const object = getObject(next, objectId)
-  if (!object) return project
-  const propertyMeta = getAnimatableProperty(propertyId)
-  if (propertyMeta?.type === 'number') {
-    object.base[propertyId] = normalizeNumeric(
-      value,
-      object.base[propertyId] ?? 0
-    )
-  } else {
-    object.base[propertyId] = value
-  }
-  return next
+  return replaceObject(project, objectId, (obj) => {
+    const meta = getAnimatableProperty(propertyId)
+    obj.base[propertyId] =
+      meta?.type === 'number'
+        ? normalizeNumeric(value, obj.base[propertyId] ?? 0)
+        : value
+  })
+}
+
+export function updateObjectBaseProperties(project, { objectId, patch }) {
+  if (!patch || typeof patch !== 'object') return project
+  return replaceObject(project, objectId, (obj) => {
+    for (const [propertyId, value] of Object.entries(patch)) {
+      if (!isAnimatableProperty(propertyId)) continue
+      const meta = getAnimatableProperty(propertyId)
+      obj.base[propertyId] =
+        meta?.type === 'number'
+          ? normalizeNumeric(value, obj.base[propertyId] ?? 0)
+          : value
+    }
+  })
 }
 
 export function upsertKeyframe(project, { objectId, propertyId, time, value }) {
   if (!isAnimatableProperty(propertyId)) return project
-  const next = cloneProject(project)
-  const object = getObject(next, objectId)
-  if (!object) return project
-  const propertyMeta = getAnimatableProperty(propertyId)
-  const normalizedTime = clampTime(next, Number(time) || 0)
-  const normalizedValue =
-    propertyMeta?.type === 'number'
-      ? normalizeNumeric(value, object.base[propertyId] ?? 0)
-      : value
-
-  const keys = object.keyframes[propertyId] ?? []
-  const keyIndex = keys.findIndex((key) => Math.abs(key.t - normalizedTime) < 0.0001)
-  if (keyIndex >= 0) {
-    keys[keyIndex].value = normalizedValue
-  } else {
-    keys.push({ t: normalizedTime, value: normalizedValue })
-  }
-  object.keyframes[propertyId] = sortKeyframes(keys)
-  return next
+  return replaceObject(project, objectId, (obj) => {
+    const meta = getAnimatableProperty(propertyId)
+    const t = clampTime(project, Number(time) || 0)
+    const v =
+      meta?.type === 'number'
+        ? normalizeNumeric(value, obj.base[propertyId] ?? 0)
+        : value
+    const keys = (obj.keyframes[propertyId] ?? []).slice()
+    const idx = keys.findIndex((k) => Math.abs(k.t - t) < 0.0001)
+    if (idx >= 0) {
+      keys[idx] = { t: keys[idx].t, value: v }
+    } else {
+      keys.push({ t, value: v })
+    }
+    obj.keyframes = { ...obj.keyframes, [propertyId]: sortKeyframes(keys) }
+  })
 }
 
 export function removeKeyframe(project, { objectId, propertyId, time }) {
   if (!isAnimatableProperty(propertyId)) return project
-  const next = cloneProject(project)
-  const object = getObject(next, objectId)
-  if (!object) return project
-  const normalizedTime = clampTime(next, Number(time) || 0)
-  const keys = object.keyframes[propertyId] ?? []
-  object.keyframes[propertyId] = keys.filter(
-    (key) => Math.abs(key.t - normalizedTime) >= 0.0001
-  )
-  return next
+  return replaceObject(project, objectId, (obj) => {
+    const t = clampTime(project, Number(time) || 0)
+    const keys = (obj.keyframes[propertyId] ?? []).filter(
+      (k) => Math.abs(k.t - t) >= 0.0001
+    )
+    obj.keyframes = { ...obj.keyframes, [propertyId]: keys }
+  })
 }
 
 export function replaceKeyframes(project, { objectId, propertyId, keyframes }) {
   if (!isAnimatableProperty(propertyId)) return project
-  const next = cloneProject(project)
-  const object = getObject(next, objectId)
-  if (!object) return project
-  const normalized = (Array.isArray(keyframes) ? keyframes : [])
-    .map((key) => ({
-      t: clampTime(next, Number(key.t) || 0),
-      value: key.value,
-    }))
-    .sort((a, b) => a.t - b.t)
-  object.keyframes[propertyId] = normalized
-  return next
+  return replaceObject(project, objectId, (obj) => {
+    const normalized = (Array.isArray(keyframes) ? keyframes : [])
+      .map((k) => ({ t: clampTime(project, Number(k.t) || 0), value: k.value }))
+      .sort((a, b) => a.t - b.t)
+    obj.keyframes = { ...obj.keyframes, [propertyId]: normalized }
+  })
 }
 
 export function deleteKeyframesByTimes(project, { objectId, propertyId, times }) {
   if (!isAnimatableProperty(propertyId)) return project
-  const next = cloneProject(project)
-  const object = getObject(next, objectId)
-  if (!object) return project
-  const timeSet = new Set((times || []).map((time) => Number(time).toFixed(4)))
-  object.keyframes[propertyId] = (object.keyframes[propertyId] ?? []).filter(
-    (key) => !timeSet.has(Number(key.t).toFixed(4))
-  )
-  return next
+  return replaceObject(project, objectId, (obj) => {
+    const timeSet = new Set((times || []).map((t) => Number(t).toFixed(4)))
+    obj.keyframes = {
+      ...obj.keyframes,
+      [propertyId]: (obj.keyframes[propertyId] ?? []).filter(
+        (k) => !timeSet.has(Number(k.t).toFixed(4))
+      ),
+    }
+  })
 }
 
 export function trimClip(project, { trackId, clipId, start, end }) {
-  const next = cloneProject(project)
-  const track = next.tracks.find((item) => item.id === trackId)
-  if (!track) return project
-  const clip = track.clips.find((item) => item.id === clipId)
-  if (!clip) return project
-  const minDuration = 0.1
-  const safeStart = clampTime(next, Number(start) || 0)
-  const safeEnd = clampTime(next, Number(end) || next.duration)
-  if (safeEnd - safeStart < minDuration) {
-    return project
-  }
-  clip.start = safeStart
-  clip.end = safeEnd
-  clip.trimStart = safeStart
-  clip.trimEnd = safeEnd
-  return next
+  const trackIdx = project.tracks.findIndex((t) => t.id === trackId)
+  if (trackIdx < 0) return project
+  const track = project.tracks[trackIdx]
+  const clipIdx = track.clips.findIndex((c) => c.id === clipId)
+  if (clipIdx < 0) return project
+  const safeStart = clampTime(project, Number(start) || 0)
+  const safeEnd = clampTime(project, Number(end) || project.duration)
+  if (safeEnd - safeStart < 0.1) return project
+  const newClip = { ...track.clips[clipIdx], start: safeStart, end: safeEnd, trimStart: safeStart, trimEnd: safeEnd }
+  const clips = track.clips.slice()
+  clips[clipIdx] = newClip
+  const tracks = project.tracks.slice()
+  tracks[trackIdx] = { ...track, clips }
+  return { ...project, tracks }
 }
 
 export function getSelectedObject(project) {
-  return getObject(project, project.selectedObjectId)
+  if (!project.selectedObjectId) return null
+  return project.objects.find((o) => o.id === project.selectedObjectId) ?? null
 }
 
 export function getRenderedObjectsAtTime(project, time = project.currentTime) {
-  return project.objects
-    .map((object) => resolveObjectAtTime(object, time))
-    .filter(Boolean)
+  const results = []
+  for (const object of project.objects) {
+    const resolved = resolveObjectAtTime(object, time)
+    if (resolved) results.push(resolved)
+  }
+  return results
+}
+
+export function updateObjectTextField(project, { objectId, field, value }) {
+  return replaceObject(project, objectId, (obj) => {
+    if (field === 'textContent') {
+      obj.textContent = value
+    } else if (obj.textStyle) {
+      obj.textStyle = { ...obj.textStyle, [field]: value }
+    }
+  })
+}
+
+export function appendObject(project, object) {
+  return {
+    ...project,
+    objects: [...project.objects, object],
+    selectedObjectId: object.id,
+  }
 }

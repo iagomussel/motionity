@@ -75,6 +75,7 @@
 .toolbar-btn.active {
   color: var(--color-text-brand);
   background: rgba(124, 58, 237, 0.15);
+  box-shadow: var(--shadow-glow);
 }
 
 .toolbar-separator {

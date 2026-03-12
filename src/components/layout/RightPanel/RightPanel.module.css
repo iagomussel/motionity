@@ -36,6 +36,20 @@
 .sections {
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sections :global(.rpanel-field) {
+  display: grid;
+  gap: 3px;
+}
+
+.sections :global(.rpanel-field-label) {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* ── Responsive: right panel becomes a drawer ── */

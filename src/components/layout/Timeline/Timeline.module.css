@@ -162,6 +162,7 @@
 
 .clip:hover {
   background: var(--color-track-clip-hover);
+  box-shadow: var(--shadow-glow);
 }
 
 .clip.selected {

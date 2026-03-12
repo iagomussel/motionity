@@ -29,16 +29,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: var(--font-weight-bold);
-  color: #fff;
   flex-shrink: 0;
+  box-shadow: var(--shadow-brand);
 }
 
 .logo-name {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-display);
   color: var(--color-text-primary);
+  letter-spacing: -0.02em;
 }
 
 /* ── Project name ── */

@@ -63,10 +63,14 @@
 .tab-icon {
   font-size: 16px;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-label {
   font-size: var(--font-size-xs);
+  font-family: var(--font-family-sans);
 }
 
 /* ── Content area ── */
@@ -170,6 +174,7 @@
 .text-preset-btn:hover {
   border-color: var(--color-brand-500);
   background: var(--color-surface-hover);
+  box-shadow: var(--shadow-glow);
 }
 
 /* Shapes panel */
@@ -194,6 +199,7 @@
 .shape-btn:hover {
   border-color: var(--color-brand-500);
   color: var(--color-text-primary);
+  box-shadow: var(--shadow-glow);
 }
 .shape-label {
   font-size: var(--font-size-xs);
