@@ -371,6 +371,111 @@ export function setPlaybackSpeed(project, speed) {
 }
 
 // ---------------------------------------------------------------------------
+// Clip Split
+// ---------------------------------------------------------------------------
+
+export function splitObjectAtTime(project, objectId, time) {
+  const idx = project.objects.findIndex((o) => o.id === objectId)
+  if (idx < 0) return project
+  const obj = project.objects[idx]
+  if (!obj.visibleRange) return project
+  const t = Number(time) || project.currentTime
+  if (t <= obj.visibleRange.start + 0.1 || t >= obj.visibleRange.end - 0.1) return project
+
+  const left = deepCloneObject(obj)
+  left.visibleRange = { start: obj.visibleRange.start, end: t }
+
+  const right = deepCloneObject(obj)
+  right.id = `${obj.type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  right.name = `${obj.name} (2)`
+  right.visibleRange = { start: t, end: obj.visibleRange.end }
+
+  const objects = project.objects.slice()
+  objects.splice(idx, 1, left, right)
+  return { ...project, objects, selectedObjectId: left.id }
+}
+
+// ---------------------------------------------------------------------------
+// Aspect Ratio
+// ---------------------------------------------------------------------------
+
+export const ASPECT_RATIOS = [
+  { id: '16:9', label: '16:9 Landscape', width: 1920, height: 1080 },
+  { id: '9:16', label: '9:16 Portrait', width: 1080, height: 1920 },
+  { id: '1:1', label: '1:1 Square', width: 1080, height: 1080 },
+  { id: '4:5', label: '4:5 Instagram', width: 1080, height: 1350 },
+  { id: '4:3', label: '4:3 Standard', width: 1440, height: 1080 },
+  { id: '21:9', label: '21:9 Ultrawide', width: 2560, height: 1080 },
+]
+
+export function setAspectRatio(project, ratioId) {
+  const ar = ASPECT_RATIOS.find((r) => r.id === ratioId)
+  if (!ar) return project
+  return {
+    ...project,
+    canvasWidth: ar.width,
+    canvasHeight: ar.height,
+    aspectRatio: ratioId,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Object filters
+// ---------------------------------------------------------------------------
+
+export function updateObjectFilter(project, objectId, filterProp, value) {
+  return replaceObject(project, objectId, (obj) => {
+    obj.base[filterProp] = Number(value) || 0
+  })
+}
+
+export function applyFilterPreset(project, objectId, presetValues) {
+  return replaceObject(project, objectId, (obj) => {
+    // Reset all filter values first
+    obj.base['filter.brightness'] = 100
+    obj.base['filter.contrast'] = 100
+    obj.base['filter.saturate'] = 100
+    obj.base['filter.blur'] = 0
+    obj.base['filter.grayscale'] = 0
+    obj.base['filter.sepia'] = 0
+    obj.base['filter.hueRotate'] = 0
+    obj.base['filter.invert'] = 0
+    // Apply preset
+    for (const [key, val] of Object.entries(presetValues)) {
+      obj.base[key] = val
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Apply text animation preset
+// ---------------------------------------------------------------------------
+
+export function applyTextAnimationPreset(project, objectId, presetFn) {
+  const obj = project.objects.find((o) => o.id === objectId)
+  if (!obj) return project
+  const start = obj.visibleRange?.start ?? 0
+  const dur = (obj.visibleRange?.end ?? project.duration) - start
+  const keyframeData = presetFn(start, dur, obj.base)
+  if (!keyframeData || typeof keyframeData !== 'object') return project
+
+  return replaceObject(project, objectId, (clone) => {
+    for (const [propId, kfs] of Object.entries(keyframeData)) {
+      if (!Array.isArray(kfs)) continue
+      const normalized = kfs
+        .filter((k) => k.value != null)
+        .map((k) => ({
+          t: Math.max(0, Math.min(project.duration, k.t)),
+          value: k.value === null ? (clone.base[propId] ?? 0) : k.value,
+          easing: k.easing ?? 'linear',
+        }))
+        .sort((a, b) => a.t - b.t)
+      clone.keyframes = { ...clone.keyframes, [propId]: normalized }
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 

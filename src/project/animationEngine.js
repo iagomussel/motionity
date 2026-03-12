@@ -4,6 +4,52 @@ import {
   getAnimatableProperty,
 } from './propertyRegistry.js'
 
+// ---------------------------------------------------------------------------
+// Easing functions
+// ---------------------------------------------------------------------------
+
+export const EASING_FUNCTIONS = {
+  linear: (t) => t,
+  easeIn: (t) => t * t,
+  easeOut: (t) => t * (2 - t),
+  easeInOut: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+  easeInCubic: (t) => t * t * t,
+  easeOutCubic: (t) => (--t) * t * t + 1,
+  easeInOutCubic: (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+  easeInQuart: (t) => t * t * t * t,
+  easeOutQuart: (t) => 1 - (--t) * t * t * t,
+  easeInOutQuart: (t) => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t,
+  spring: (t) => 1 - Math.cos(t * Math.PI * 2.5) * Math.exp(-6 * t),
+  bounce: (t) => {
+    if (t < 1 / 2.75) return 7.5625 * t * t
+    if (t < 2 / 2.75) return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75
+    if (t < 2.5 / 2.75) return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375
+    return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375
+  },
+  elastic: (t) => t === 0 || t === 1 ? t : -Math.pow(2, 10 * (t - 1)) * Math.sin((t - 1.1) * 5 * Math.PI),
+}
+
+export const EASING_OPTIONS = [
+  { id: 'linear', label: 'Linear' },
+  { id: 'easeIn', label: 'Ease In' },
+  { id: 'easeOut', label: 'Ease Out' },
+  { id: 'easeInOut', label: 'Ease In-Out' },
+  { id: 'easeInCubic', label: 'Ease In Cubic' },
+  { id: 'easeOutCubic', label: 'Ease Out Cubic' },
+  { id: 'easeInOutCubic', label: 'Ease In-Out Cubic' },
+  { id: 'spring', label: 'Spring' },
+  { id: 'bounce', label: 'Bounce' },
+  { id: 'elastic', label: 'Elastic' },
+]
+
+function getEasing(easingId) {
+  return EASING_FUNCTIONS[easingId] ?? EASING_FUNCTIONS.linear
+}
+
+// ---------------------------------------------------------------------------
+// Interpolation
+// ---------------------------------------------------------------------------
+
 function lerp(a, b, t) {
   return a + (b - a) * t
 }
@@ -70,6 +116,10 @@ function interpolateValue(type, fromValue, toValue, factor) {
   return factor < 0.5 ? fromValue : toValue
 }
 
+// ---------------------------------------------------------------------------
+// Resolution
+// ---------------------------------------------------------------------------
+
 export function resolvePropertyAtTime(object, propertyId, time) {
   const propertyMeta = getAnimatableProperty(propertyId)
   const baseValue = object.base[propertyId]
@@ -78,12 +128,14 @@ export function resolvePropertyAtTime(object, propertyId, time) {
   const { previous, next } = getKeyframeWindow(keys, time)
   if (!previous || !next) return baseValue
   if (previous.t === next.t) return previous.value
-  const factor = (time - previous.t) / (next.t - previous.t)
+  const linearFactor = (time - previous.t) / (next.t - previous.t)
+  const easingId = next.easing ?? 'linear'
+  const easedFactor = getEasing(easingId)(linearFactor)
   return interpolateValue(
     propertyMeta.type ?? PROPERTY_TYPES.step,
     previous.value,
     next.value,
-    factor
+    easedFactor
   )
 }
 
@@ -109,3 +161,116 @@ export function hasKeyframeAtTime(object, propertyId, time) {
   const keys = object?.keyframes?.[propertyId] ?? []
   return keys.some((key) => Math.abs(key.t - time) < 0.0001)
 }
+
+// ---------------------------------------------------------------------------
+// Text animation presets
+// ---------------------------------------------------------------------------
+
+export const TEXT_ANIMATION_PRESETS = [
+  {
+    id: 'none', label: 'None',
+    apply: () => ({}),
+  },
+  {
+    id: 'fadeIn', label: 'Fade In',
+    apply: (start, dur) => ({
+      opacity: [
+        { t: start, value: 0, easing: 'easeOut' },
+        { t: start + Math.min(dur, 0.5), value: 1 },
+      ],
+    }),
+  },
+  {
+    id: 'fadeOut', label: 'Fade Out',
+    apply: (start, dur) => ({
+      opacity: [
+        { t: start + dur - Math.min(dur, 0.5), value: 1, easing: 'easeIn' },
+        { t: start + dur, value: 0 },
+      ],
+    }),
+  },
+  {
+    id: 'slideUp', label: 'Slide Up',
+    apply: (start, dur, base) => ({
+      top: [
+        { t: start, value: (base.top ?? 0) + 80, easing: 'easeOutCubic' },
+        { t: start + Math.min(dur, 0.6), value: base.top ?? 0 },
+      ],
+      opacity: [
+        { t: start, value: 0, easing: 'easeOut' },
+        { t: start + Math.min(dur, 0.4), value: 1 },
+      ],
+    }),
+  },
+  {
+    id: 'slideDown', label: 'Slide Down',
+    apply: (start, dur, base) => ({
+      top: [
+        { t: start, value: (base.top ?? 0) - 80, easing: 'easeOutCubic' },
+        { t: start + Math.min(dur, 0.6), value: base.top ?? 0 },
+      ],
+      opacity: [
+        { t: start, value: 0, easing: 'easeOut' },
+        { t: start + Math.min(dur, 0.4), value: 1 },
+      ],
+    }),
+  },
+  {
+    id: 'scaleIn', label: 'Scale Pop',
+    apply: (start, dur, base) => ({
+      scaleX: [
+        { t: start, value: 0.3, easing: 'spring' },
+        { t: start + Math.min(dur, 0.5), value: base.scaleX ?? 1 },
+      ],
+      scaleY: [
+        { t: start, value: 0.3, easing: 'spring' },
+        { t: start + Math.min(dur, 0.5), value: base.scaleY ?? 1 },
+      ],
+      opacity: [
+        { t: start, value: 0 },
+        { t: start + Math.min(dur, 0.2), value: 1 },
+      ],
+    }),
+  },
+  {
+    id: 'bounce', label: 'Bounce In',
+    apply: (start, dur, base) => ({
+      scaleX: [
+        { t: start, value: 0, easing: 'bounce' },
+        { t: start + Math.min(dur, 0.8), value: base.scaleX ?? 1 },
+      ],
+      scaleY: [
+        { t: start, value: 0, easing: 'bounce' },
+        { t: start + Math.min(dur, 0.8), value: base.scaleY ?? 1 },
+      ],
+    }),
+  },
+  {
+    id: 'typewriter', label: 'Typewriter',
+    apply: (start, dur) => ({
+      opacity: [
+        { t: start, value: 0 },
+        { t: start + 0.01, value: 1 },
+      ],
+      width: [
+        { t: start, value: 0, easing: 'linear' },
+        { t: start + dur * 0.8, value: null },
+      ],
+    }),
+  },
+  {
+    id: 'glitch', label: 'Glitch',
+    apply: (start, dur, base) => {
+      const kfs = { left: [], top: [] }
+      const steps = 8
+      const step = Math.min(dur, 0.4) / steps
+      for (let i = 0; i < steps; i++) {
+        kfs.left.push({ t: start + i * step, value: (base.left ?? 0) + (Math.random() - 0.5) * 20 })
+        kfs.top.push({ t: start + i * step, value: (base.top ?? 0) + (Math.random() - 0.5) * 10 })
+      }
+      kfs.left.push({ t: start + steps * step, value: base.left ?? 0 })
+      kfs.top.push({ t: start + steps * step, value: base.top ?? 0 })
+      return kfs
+    },
+  },
+]
