@@ -32,6 +32,7 @@ function cloneObject(object) {
 function deepCloneObject(object) {
   return {
     ...object,
+    shapeId: object.shapeId ?? null,
     base: { ...object.base },
     textStyle: object.textStyle ? { ...object.textStyle } : undefined,
     source: object.source ? { ...object.source } : null,
@@ -316,6 +317,57 @@ export function renameObject(project, objectId, name) {
   return replaceObject(project, objectId, (obj) => {
     obj.name = name
   })
+}
+
+// ---------------------------------------------------------------------------
+// Visible Range (trim in/out)
+// ---------------------------------------------------------------------------
+
+export function updateObjectVisibleRange(project, objectId, start, end) {
+  return replaceObject(project, objectId, (obj) => {
+    const s = Math.max(0, Math.min(project.duration, Number(start) || 0))
+    const e = Math.max(s + 0.1, Math.min(project.duration, Number(end) || project.duration))
+    obj.visibleRange = { start: s, end: e }
+  })
+}
+
+export function slideObjectInTime(project, objectId, deltaTime) {
+  return replaceObject(project, objectId, (obj) => {
+    const dur = obj.visibleRange.end - obj.visibleRange.start
+    let newStart = obj.visibleRange.start + deltaTime
+    newStart = Math.max(0, Math.min(project.duration - dur, newStart))
+    obj.visibleRange = { start: newStart, end: newStart + dur }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Media properties (volume, muted, speed)
+// ---------------------------------------------------------------------------
+
+export function updateObjectMedia(project, objectId, field, value) {
+  return replaceObject(project, objectId, (obj) => {
+    if (!obj.media) obj.media = {}
+    obj.media[field] = value
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Project settings
+// ---------------------------------------------------------------------------
+
+export function setProjectDuration(project, newDuration) {
+  const d = Math.max(1, Math.min(300, Number(newDuration) || 15))
+  if (d === project.duration) return project
+  return {
+    ...project,
+    duration: d,
+    currentTime: Math.min(project.currentTime, d),
+  }
+}
+
+export function setPlaybackSpeed(project, speed) {
+  const s = Math.max(0.1, Math.min(4, Number(speed) || 1))
+  return { ...project, playback: { ...project.playback, speed: s } }
 }
 
 // ---------------------------------------------------------------------------

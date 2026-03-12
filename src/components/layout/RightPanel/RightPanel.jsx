@@ -144,10 +144,16 @@ export function RightPanel({
   onTextStyleChange,
   onDelete,
   onDuplicate,
+  onMediaPropertyChange,
+  onTrimObject,
+  projectDuration = 15,
 }) {
   const classes = [styles['right-panel'], open ? styles.open : ''].filter(Boolean).join(' ')
   const isText = selectedObject?.type === 'text'
+  const isMedia = selectedObject?.type === 'video' || selectedObject?.type === 'audio'
   const b = selectedObject?.base ?? {}
+  const media = selectedObject?.media ?? {}
+  const vr = selectedObject?.visibleRange ?? { start: 0, end: projectDuration }
 
   return (
     <aside className={classes} role="complementary" aria-label="Properties">
@@ -170,10 +176,16 @@ export function RightPanel({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <NumericField label="X" value={b.left} onChange={(v) => onPropertyChange?.('left', v)} />
                 <NumericField label="Y" value={b.top} onChange={(v) => onPropertyChange?.('top', v)} />
-                <NumericField label="W" value={b.width} onChange={(v) => onPropertyChange?.('width', v)} />
-                <NumericField label="H" value={b.height} onChange={(v) => onPropertyChange?.('height', v)} />
-                <NumericField label="Rotation" value={b.angle} onChange={(v) => onPropertyChange?.('angle', v)} />
+                <NumericField label="W" value={b.width} onChange={(v) => onPropertyChange?.('width', v)} min={1} />
+                <NumericField label="H" value={b.height} onChange={(v) => onPropertyChange?.('height', v)} min={1} />
+              </div>
+
+              <SectionLabel>Transform</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <NumericField label="Rotation" value={b.angle} onChange={(v) => onPropertyChange?.('angle', ((v % 360) + 360) % 360)} step={1} />
                 <NumericField label="Opacity" value={b.opacity} onChange={(v) => onPropertyChange?.('opacity', v)} step={0.01} min={0} max={1} />
+                <NumericField label="Scale X" value={b.scaleX} onChange={(v) => onPropertyChange?.('scaleX', v)} step={0.1} min={0.01} />
+                <NumericField label="Scale Y" value={b.scaleY} onChange={(v) => onPropertyChange?.('scaleY', v)} step={0.1} min={0.01} />
               </div>
 
               <SectionLabel>Appearance</SectionLabel>
@@ -186,6 +198,48 @@ export function RightPanel({
                   <NumericField label="Stroke Width" value={b.strokeWidth} onChange={(v) => onPropertyChange?.('strokeWidth', v)} min={0} />
                   <NumericField label="Corner Radius" value={b.rx} onChange={(v) => { onPropertyChange?.('rx', v); onPropertyChange?.('ry', v) }} min={0} />
                 </div>
+              )}
+
+              {/* Clip timing (In / Out) */}
+              <SectionLabel>Clip Timing</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <NumericField label="In (sec)" value={Number(vr.start.toFixed(2))}
+                  onChange={(v) => onTrimObject?.(selectedObject?.id, v, vr.end)}
+                  step={0.1} min={0} max={vr.end - 0.1} />
+                <NumericField label="Out (sec)" value={Number(vr.end.toFixed(2))}
+                  onChange={(v) => onTrimObject?.(selectedObject?.id, vr.start, v)}
+                  step={0.1} min={vr.start + 0.1} max={projectDuration} />
+              </div>
+
+              {/* Audio controls for video/audio */}
+              {isMedia && (
+                <>
+                  <SectionLabel>Audio</SectionLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'end' }}>
+                    <Field label={`Volume: ${Math.round((media.volume ?? 1) * 100)}%`}>
+                      <input type="range" min={0} max={1} step={0.01}
+                        value={media.volume ?? 1}
+                        onChange={(e) => onMediaPropertyChange?.(selectedObject?.id, 'volume', Number(e.target.value))}
+                        style={{ width: '100%', accentColor: '#7c3aed' }}
+                      />
+                    </Field>
+                    <ToggleBtn
+                      active={media.muted}
+                      onClick={() => onMediaPropertyChange?.(selectedObject?.id, 'muted', !media.muted)}
+                      title={media.muted ? 'Unmute' : 'Mute'}
+                    >
+                      {media.muted ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                      )}
+                    </ToggleBtn>
+                  </div>
+                </>
               )}
 
               <SectionLabel>Shadow</SectionLabel>
@@ -202,6 +256,7 @@ export function RightPanel({
                   <select value={selectedPropertyId} onChange={(e) => onSelectProperty?.(e.target.value)} style={inputStyle}>
                     <option value="left">X</option><option value="top">Y</option>
                     <option value="width">Width</option><option value="height">Height</option>
+                    <option value="scaleX">Scale X</option><option value="scaleY">Scale Y</option>
                     <option value="opacity">Opacity</option><option value="fill">Fill</option>
                     <option value="stroke">Stroke</option><option value="strokeWidth">Stroke Width</option>
                     <option value="angle">Rotation</option><option value="rx">Corner Radius</option>

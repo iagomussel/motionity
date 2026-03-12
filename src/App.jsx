@@ -21,6 +21,8 @@ import {
   removeKeyframe, replaceKeyframes, selectObject, selectProperty,
   setCurrentTime, togglePlayback, upsertKeyframe,
   updateObjectBaseProperty, updateObjectBaseProperties, updateObjectTextField,
+  updateObjectVisibleRange, slideObjectInTime, updateObjectMedia,
+  setProjectDuration, setPlaybackSpeed,
   createHistory, pushHistory, undo as undoHistory, redo as redoHistory,
   currentState, canUndo, canRedo,
 } from './project/editorState.js'
@@ -38,9 +40,9 @@ function makeEmptyKeyframes() {
   return kf
 }
 
-function buildObject({ id, name, type, base, textContent = '', textStyle = null, source = null }) {
+function buildObject({ id, name, type, base, textContent = '', textStyle = null, source = null, shapeId = null }) {
   return {
-    id, name, type,
+    id, name, type, shapeId,
     trackId: 'track-video-main',
     clipId: 'clip-video-main',
     base, textContent, textStyle, source,
@@ -218,7 +220,8 @@ function App() {
       const delta = (now - last) / 1000
       last = now
       setProjectDirect((prev) => {
-        const next = setCurrentTime(prev, prev.currentTime + delta)
+        const speed = prev.playback.speed ?? 1
+        const next = setCurrentTime(prev, prev.currentTime + delta * speed)
         if (next.currentTime >= next.duration) return togglePlayback(setCurrentTime(next, next.duration), false)
         return next
       })
@@ -268,6 +271,11 @@ function App() {
     fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch, commit))
   }, [setEditorProject, setProjectDirect])
 
+  const handleObjectRotate = useCallback((objectId, angle, commit = false) => {
+    const fn = commit ? setEditorProject : setProjectDirect
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, { angle }, commit))
+  }, [setEditorProject, setProjectDirect])
+
   const handleAddTextPreset = useCallback((preset) => {
     setEditorProject((prev) => {
       const id = `obj-text-${Date.now()}`
@@ -304,13 +312,16 @@ function App() {
   }, [setEditorProject])
 
   const handleAddShape = useCallback((shape) => {
+    const isCircle = shape?.id === 'circle'
+    const size = isCircle ? 200 : 240
     setEditorProject((prev) => appendObject(prev, buildObject({
       id: `obj-shape-${Date.now()}`, name: shape?.label ?? 'Shape', type: 'shape',
+      shapeId: shape?.id ?? 'rect',
       base: {
-        left: 280, top: 300, width: 240, height: 180,
+        left: 280, top: 300, width: size, height: isCircle ? size : 180,
         scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
         fill: '#14b8a6', stroke: '#ffffff', strokeWidth: 2,
-        charSpacing: 0, lineHeight: 1, rx: 20, ry: 20,
+        charSpacing: 0, lineHeight: 1, rx: 0, ry: 0,
         'shadow.color': '#000000', 'shadow.opacity': 0.2,
         'shadow.offsetX': 0, 'shadow.offsetY': 10, 'shadow.blur': 24,
       },
@@ -351,6 +362,30 @@ function App() {
   const handleToggleVisibility = useCallback((id) => setEditorProject((p) => toggleObjectVisibility(p, id)), [setEditorProject])
   const handleToggleLock = useCallback((id) => setEditorProject((p) => toggleObjectLock(p, id)), [setEditorProject])
   const handleRenameObject = useCallback((id, name) => setEditorProject((p) => renameObject(p, id, name)), [setEditorProject])
+
+  // --- Clip / trim handlers ---
+  const handleTrimObject = useCallback((objectId, start, end) => {
+    setEditorProject((p) => updateObjectVisibleRange(p, objectId, start, end))
+  }, [setEditorProject])
+
+  const handleSlideObject = useCallback((objectId, deltaTime, commit = false) => {
+    const fn = commit ? setEditorProject : setProjectDirect
+    fn((p) => slideObjectInTime(p, objectId, deltaTime))
+  }, [setEditorProject, setProjectDirect])
+
+  // --- Media property handlers ---
+  const handleMediaPropertyChange = useCallback((objectId, field, value) => {
+    setEditorProject((p) => updateObjectMedia(p, objectId, field, value))
+  }, [setEditorProject])
+
+  // --- Project settings ---
+  const handleDurationChange = useCallback((d) => {
+    setEditorProject((p) => setProjectDuration(p, d))
+  }, [setEditorProject])
+
+  const handleSpeedChange = useCallback((s) => {
+    setProjectDirect((p) => setPlaybackSpeed(p, s))
+  }, [setProjectDirect])
 
   // --- Keyframe handlers ---
   const handleToggleKeyframe = useCallback(() => {
@@ -468,6 +503,9 @@ function App() {
             onTextStyleChange={handleTextStyleChange}
             onDelete={handleDeleteObject}
             onDuplicate={handleDuplicateObject}
+            onMediaPropertyChange={handleMediaPropertyChange}
+            onTrimObject={handleTrimObject}
+            projectDuration={duration}
           />
         }
         timeline={
@@ -475,7 +513,11 @@ function App() {
             isPlaying={isPlaying}
             currentTime={currentTime}
             duration={duration}
-            tracks={editorProject.tracks}
+            objects={editorProject.objects}
+            selectedObjectId={editorProject.selectedObjectId}
+            onSelectObject={handleObjectSelect}
+            onTrimObject={handleTrimObject}
+            onSlideObject={handleSlideObject}
             onPlay={handlePlay}
             onPause={handlePause}
             onSkipToStart={handleSkipStart}
@@ -489,6 +531,9 @@ function App() {
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             fps={editorProject.playback.fps}
+            speed={editorProject.playback.speed ?? 1}
+            onSpeedChange={handleSpeedChange}
+            onDurationChange={handleDurationChange}
             selectedKeyframes={selectedKeyframes}
             onSelectedKeyframesChange={setSelectedKeyframes}
             onUpdateKeyframeTimes={handleUpdateKeyframeTimes}
@@ -508,8 +553,11 @@ function App() {
           onSelectObject={handleObjectSelect}
           onMoveObject={handleObjectMove}
           onResizeObject={handleObjectResize}
+          onRotateObject={handleObjectRotate}
           onTextContentChange={handleTextContentChange}
           onTextStyleChange={handleTextStyleChange}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
         />
       </EditorShell>
       <input ref={uploadInputRef} type="file" accept="image/*,video/*,audio/*" style={{ display: 'none' }} onChange={handleMediaSelected} />

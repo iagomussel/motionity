@@ -8,10 +8,10 @@
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
-  resize: vertical; /* allow user to resize height */
+  resize: vertical;
 }
 
-/* ── Top bar: controls + time ruler ── */
+/* ── Controls bar ── */
 .controls-bar {
   display: flex;
   align-items: center;
@@ -42,7 +42,7 @@
 .transport-btns {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -79,11 +79,75 @@
   color: var(--color-text-disabled);
 }
 
+.speed-select {
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-family-mono);
+  cursor: pointer;
+  margin-left: var(--space-2);
+}
+
+.duration-input {
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-family-mono);
+  width: 48px;
+  margin-left: var(--space-2);
+}
+
 .zoom-controls {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 2px;
+}
+
+/* ── Ruler ── */
+.ruler {
+  height: 22px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-base);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ruler-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ruler-tick-label {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-family: var(--font-family-mono);
+  font-size: 9px;
+  color: var(--color-text-disabled);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ruler-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-playhead);
+  pointer-events: none;
+  z-index: 5;
 }
 
 /* ── Tracks area ── */
@@ -95,7 +159,7 @@
 
 /* Track labels column */
 .track-labels {
-  width: 120px;
+  width: 140px;
   flex-shrink: 0;
   border-right: 1px solid var(--color-border-subtle);
   overflow-y: auto;
@@ -103,16 +167,26 @@
 }
 
 .track-label {
-  height: 36px;
+  height: 32px;
   display: flex;
   align-items: center;
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-2);
   border-bottom: 1px solid var(--color-border-subtle);
   gap: var(--space-2);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.track-label:hover {
+  background: var(--color-surface-hover);
+}
+
+.track-label-selected {
+  background: rgba(124, 58, 237, 0.12);
 }
 
 .track-label-text {
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   overflow: hidden;
@@ -121,9 +195,25 @@
 }
 
 .track-type-icon {
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
-  color: var(--color-text-disabled);
+  font-weight: 700;
+}
+
+/* ── Keyframe lane label ── */
+.kf-label {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.kf-select {
+  background: var(--color-surface-overlay);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Track content column */
@@ -134,48 +224,133 @@
 }
 
 .track-row {
-  height: 36px;
+  height: 32px;
   border-bottom: 1px solid var(--color-border-subtle);
   background: var(--color-track-bg);
   position: relative;
 }
 
 .track-row:nth-child(even) {
-  background: color-mix(in srgb, var(--color-track-bg) 90%, var(--color-surface-base));
+  background: color-mix(in srgb, var(--color-track-bg) 92%, var(--color-surface-base));
 }
 
-/* Clip block */
+.kf-row {
+  background: rgba(124, 58, 237, 0.04);
+}
+
+/* ── Clip block ── */
 .clip {
   position: absolute;
-  top: 4px;
-  height: 28px;
-  background: var(--color-track-clip);
-  border-radius: var(--radius-sm);
+  top: 3px;
+  height: 26px;
+  border-radius: 4px;
   overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 0 var(--space-2);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0 8px;
+  cursor: grab;
+  border: 1px solid;
+  transition: box-shadow 100ms ease-out;
+  gap: 4px;
+  min-width: 16px;
 }
 
 .clip:hover {
-  background: var(--color-track-clip-hover);
-  box-shadow: var(--shadow-glow);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), var(--shadow-glow);
 }
 
-.clip.selected {
-  box-shadow: 0 0 0 2px var(--color-brand-400);
+.clip-selected {
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.3);
+}
+
+.clip-icon {
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .clip-label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: rgba(255,255,255,0.9);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Trim handles ── */
+.trim-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  z-index: 5;
+}
+
+.clip:hover .trim-handle {
+  opacity: 1;
+}
+
+.trim-handle:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Keyframe actions ── */
+.kf-actions {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  z-index: 10;
+}
+
+.kf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  font-size: 10px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.kf-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-overlay);
+}
+
+/* ── Keyframe diamond ── */
+.keyframe {
+  position: absolute;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border: 1px solid #c4b5fd;
+  background: #7c3aed;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 80ms ease-out;
+}
+.keyframe:hover {
+  transform: rotate(45deg) scale(1.2);
+}
+.keyframe-selected {
+  border: 2px solid #f5f3ff;
+  background: #a78bfa;
 }
 
 /* ── Playhead ── */
@@ -195,19 +370,9 @@
   top: 0;
   left: -5px;
   width: 12px;
-  height: 12px;
+  height: 10px;
   background: var(--color-playhead);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
-}
-
-/* ── Ruler ── */
-.ruler {
-  height: 20px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-surface-base);
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
 }
 
 /* ── Empty state ── */
@@ -219,6 +384,7 @@
   color: var(--color-text-disabled);
   font-size: var(--font-size-sm);
   gap: var(--space-2);
+  height: 80px;
 }
 
 /* ── Responsive ── */
@@ -229,27 +395,25 @@
   .track-labels {
     width: 80px;
   }
-
-  /* Minimum 44px touch targets on mobile */
   .play-btn {
     width: 44px;
     height: 44px;
     font-size: 16px;
   }
-
   .transport-btn {
     width: 44px;
     height: 44px;
     font-size: 14px;
   }
-
   .controls-bar {
     padding: 0 var(--space-2);
     gap: var(--space-2);
     height: 52px;
   }
-
   .zoom-controls {
+    display: none;
+  }
+  .speed-select {
     display: none;
   }
 }

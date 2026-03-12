@@ -84,6 +84,7 @@ const SHAPE_OPTIONS = [
   { id: 'circle',  label: 'Circle',    path: 'M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z' },
   { id: 'triangle',label: 'Triangle',  path: 'M12 3 2 21h20z' },
   { id: 'star',    label: 'Star',      path: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z' },
+  { id: 'polygon', label: 'Hexagon',   path: 'M12 2l8.66 5v10L12 22l-8.66-5V7z' },
 ]
 
 // ---------------------------------------------------------------------------
