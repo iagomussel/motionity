@@ -14,81 +14,102 @@ import { isSaveShortcut } from './project/hotkeys.js'
 import { saveCurrentProject, loadCurrentProject } from './project/storage.js'
 import { createProjectV2 } from './project/model.js'
 import {
-  appendObject,
-  deleteKeyframesByTimes,
-  getRenderedObjectsAtTime,
-  getSelectedObject,
-  removeKeyframe,
-  replaceKeyframes,
-  selectObject,
-  selectProperty,
-  setCurrentTime,
-  togglePlayback,
-  upsertKeyframe,
-  updateObjectBaseProperty,
-  updateObjectBaseProperties,
-  updateObjectTextField,
+  appendObject, removeObject, duplicateObject,
+  bringToFront, sendToBack, moveObjectUp, moveObjectDown,
+  toggleObjectVisibility, toggleObjectLock, renameObject,
+  deleteKeyframesByTimes, getRenderedObjectsAtTime, getSelectedObject,
+  removeKeyframe, replaceKeyframes, selectObject, selectProperty,
+  setCurrentTime, togglePlayback, upsertKeyframe,
+  updateObjectBaseProperty, updateObjectBaseProperties, updateObjectTextField,
+  createHistory, pushHistory, undo as undoHistory, redo as redoHistory,
+  currentState, canUndo, canRedo,
 } from './project/editorState.js'
 import { hasKeyframeAtTime } from './project/animationEngine.js'
 import { runExportJob, triggerBrowserDownload } from './project/exportService.js'
 import { listAnimatablePropertyIds } from './project/propertyRegistry.js'
 
-const LEFT_TABS = [
-  { id: 'media',  label: 'Media'  },
-  { id: 'text',   label: 'Text'   },
-  { id: 'shapes', label: 'Shapes' },
-  { id: 'layers', label: 'Layers' },
-]
-
 const AUTOSAVE_DELAY = 2000
 
-function nowIso() {
-  return new Date().toISOString()
-}
-
-const EMPTY_KEYFRAMES = (() => {
-  const kf = {}
-  listAnimatablePropertyIds().forEach((id) => { kf[id] = [] })
-  return kf
-})()
+function nowIso() { return new Date().toISOString() }
 
 function makeEmptyKeyframes() {
   const kf = {}
-  for (const id of Object.keys(EMPTY_KEYFRAMES)) {
-    kf[id] = []
-  }
+  for (const id of listAnimatablePropertyIds()) kf[id] = []
   return kf
 }
 
 function buildObject({ id, name, type, base, textContent = '', textStyle = null, source = null }) {
   return {
-    id,
-    name,
-    type,
+    id, name, type,
     trackId: 'track-video-main',
     clipId: 'clip-video-main',
-    base,
-    textContent,
-    textStyle,
-    source,
+    base, textContent, textStyle, source,
+    hidden: false, locked: false,
     keyframes: makeEmptyKeyframes(),
     visibleRange: { start: 0, end: 15 },
   }
 }
 
+// DRY: shared patch-and-commit for move/resize
+function applyPatchWithOptionalKeyframes(prev, objectId, patch, commit) {
+  let next = updateObjectBaseProperties(prev, { objectId, patch })
+  if (!commit) return next
+  for (const [key, val] of Object.entries(patch)) {
+    next = upsertKeyframe(next, { objectId, propertyId: key, time: next.currentTime, value: val })
+  }
+  return next
+}
+
 function App() {
-  const [editorProject, setEditorProject] = useState(() => {
+  // --- Undo/Redo History ---
+  const [history, setHistory] = useState(() => {
+    let initial
     try {
       const saved = loadCurrentProject({ storage: window.localStorage })
-      if (saved && saved.version === 2) return saved
+      if (saved && saved.version === 2) initial = saved
     } catch { /* ignore */ }
-    return createProjectV2({ now: nowIso(), name: 'Untitled Project' })
+    if (!initial) initial = createProjectV2({ now: nowIso(), name: 'Untitled Project' })
+    return createHistory(initial)
   })
 
-  const [saveStatus, setSaveStatus]       = useState('idle')
-  const [activeTool, setActiveTool]       = useState('select')
+  const editorProject = currentState(history)
+  const canUndoNow = canUndo(history)
+  const canRedoNow = canRedo(history)
+
+  const setEditorProject = useCallback((updater) => {
+    setHistory((prev) => {
+      const current = currentState(prev)
+      const next = typeof updater === 'function' ? updater(current) : updater
+      if (next === current) return prev
+      return pushHistory(prev, next)
+    })
+  }, [])
+
+  // For high-frequency ops (playback tick, drag) that shouldn't push undo
+  const setProjectDirect = useCallback((updater) => {
+    setHistory((prev) => {
+      const current = currentState(prev)
+      const next = typeof updater === 'function' ? updater(current) : updater
+      if (next === current) return prev
+      const stack = prev.stack.slice()
+      stack[prev.index] = next
+      return { ...prev, stack }
+    })
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    setHistory((prev) => undoHistory(prev))
+  }, [])
+
+  const handleRedo = useCallback(() => {
+    setHistory((prev) => redoHistory(prev))
+  }, [])
+
+  // --- UI State ---
+  const [saveStatus, setSaveStatus] = useState('idle')
+  const [activeTool, setActiveTool] = useState('select')
   const [exportModalOpen, setExportModalOpen] = useState(false)
-  const [shareModalOpen, setShareModalOpen]   = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [exportState, setExportState] = useState({ status: 'idle', progress: 0, error: null })
   const exportAbortRef = useRef(null)
   const [selectedKeyframes, setSelectedKeyframes] = useState([])
@@ -97,17 +118,15 @@ function App() {
   const projectRef = useRef(editorProject)
   projectRef.current = editorProject
 
-  // --- Derived state with memoization ---
+  // --- Derived state ---
   const selectedObject = useMemo(
     () => getSelectedObject(editorProject),
     [editorProject.selectedObjectId, editorProject.objects]
   )
-
   const renderObjects = useMemo(
     () => getRenderedObjectsAtTime(editorProject, editorProject.currentTime),
     [editorProject.objects, editorProject.currentTime]
   )
-
   const isKeyframedAtCurrentTime = useMemo(() => {
     if (!selectedObject) return false
     return hasKeyframeAtTime(selectedObject, editorProject.selectedPropertyId, editorProject.currentTime)
@@ -117,62 +136,80 @@ function App() {
   const isPlaying = editorProject.playback.isPlaying
   const currentTime = editorProject.currentTime
   const duration = editorProject.duration
-  const tracks = editorProject.tracks
 
-  // --- Auto-save to localStorage ---
+  // --- Auto-save ---
   useEffect(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     autoSaveTimerRef.current = setTimeout(() => {
       try {
         const now = nowIso()
-        saveCurrentProject({
-          storage: window.localStorage,
-          project: { ...projectRef.current, updatedAt: now },
-          now,
-        })
+        saveCurrentProject({ storage: window.localStorage, project: { ...projectRef.current, updatedAt: now }, now })
       } catch { /* storage unavailable */ }
     }, AUTOSAVE_DELAY)
-    return () => {
-      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
-    }
-  }, [editorProject.objects, editorProject.name, editorProject.tracks])
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current) }
+  }, [editorProject.objects, editorProject.name])
 
-  // Space -> play/pause
+  // --- Global keyboard shortcuts ---
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable
+      // Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); handleUndo(); return }
+        if (e.key === 'z' && e.shiftKey) { e.preventDefault(); handleRedo(); return }
+        if (e.key === 'y') { e.preventDefault(); handleRedo(); return }
+        if (e.key === 'd' && !isInput) {
+          e.preventDefault()
+          if (editorProject.selectedObjectId) {
+            setEditorProject((prev) => duplicateObject(prev, prev.selectedObjectId))
+          }
+          return
+        }
+      }
+      if (isInput) return
+      // Ctrl/Cmd+S
+      if (isSaveShortcut(e)) {
+        e.preventDefault()
+        setSaveStatus('saving')
+        try { saveCurrentProject({ storage: window.localStorage, project: { ...projectRef.current, updatedAt: nowIso() }, now: nowIso() }) } catch { /* ignore */ }
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+        return
+      }
+      // Space
       if (e.code === 'Space') {
         e.preventDefault()
-        setEditorProject((prev) => togglePlayback(prev))
+        setProjectDirect((prev) => togglePlayback(prev))
+        return
+      }
+      // Delete / Backspace -> delete selected object
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (editorProject.selectedObjectId) {
+          e.preventDefault()
+          setEditorProject((prev) => removeObject(prev, prev.selectedObjectId))
+        }
+        return
+      }
+      // Arrow keys -> nudge
+      const arrows = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+      if (arrows.includes(e.key) && editorProject.selectedObjectId && selectedObject) {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const left = selectedObject.base?.left ?? 0
+        const top = selectedObject.base?.top ?? 0
+        const patch =
+          e.key === 'ArrowLeft' ? { left: left - step } :
+          e.key === 'ArrowRight' ? { left: left + step } :
+          e.key === 'ArrowUp' ? { top: top - step } :
+          { top: top + step }
+        setEditorProject((prev) => applyPatchWithOptionalKeyframes(prev, prev.selectedObjectId, patch, true))
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [editorProject.selectedObjectId, selectedObject, handleUndo, handleRedo, setEditorProject, setProjectDirect])
 
-  // Ctrl/Cmd+S manual save
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (!isSaveShortcut(e)) return
-      e.preventDefault()
-      setSaveStatus('saving')
-      try {
-        const now = nowIso()
-        saveCurrentProject({
-          storage: window.localStorage,
-          project: { ...projectRef.current, updatedAt: now },
-          now,
-        })
-      } catch { /* ignore */ }
-      setSaveStatus('saved')
-      const timer = setTimeout(() => setSaveStatus('idle'), 2000)
-      return () => clearTimeout(timer)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
-
-  // Playback loop
+  // Playback loop (no undo push)
   useEffect(() => {
     if (!isPlaying) return undefined
     let frameId = 0
@@ -180,326 +217,216 @@ function App() {
     const tick = (now) => {
       const delta = (now - last) / 1000
       last = now
-      setEditorProject((prev) => {
+      setProjectDirect((prev) => {
         const next = setCurrentTime(prev, prev.currentTime + delta)
-        if (next.currentTime >= next.duration) {
-          return togglePlayback(setCurrentTime(next, next.duration), false)
-        }
+        if (next.currentTime >= next.duration) return togglePlayback(setCurrentTime(next, next.duration), false)
         return next
       })
       frameId = requestAnimationFrame(tick)
     }
     frameId = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frameId)
-  }, [isPlaying])
+  }, [isPlaying, setProjectDirect])
 
   // --- Handlers ---
   const handleProjectNameChange = useCallback((name) => {
     setEditorProject((prev) => ({ ...prev, name, updatedAt: nowIso() }))
-  }, [])
+  }, [setEditorProject])
 
-  const handleExport  = useCallback(() => setExportModalOpen(true), [])
-  const handleShare   = useCallback(() => setShareModalOpen(true), [])
+  const handleExport = useCallback(() => setExportModalOpen(true), [])
+  const handleShare = useCallback(() => setShareModalOpen(true), [])
 
-  const handlePlay = useCallback(() => {
-    setEditorProject((prev) => togglePlayback(prev, true))
-  }, [])
-  const handlePause = useCallback(() => {
-    setEditorProject((prev) => togglePlayback(prev, false))
-  }, [])
-  const handleSkipStart = useCallback(() => {
-    setEditorProject((prev) => setCurrentTime(prev, 0))
-  }, [])
-  const handleSkipEnd = useCallback(() => {
-    setEditorProject((prev) => setCurrentTime(prev, prev.duration))
-  }, [])
-  const handleSeek = useCallback((time) => {
-    setEditorProject((prev) => setCurrentTime(prev, time))
-  }, [])
-  const handleStepBackward = useCallback(() => {
-    setEditorProject((prev) =>
-      setCurrentTime(prev, prev.currentTime - 1 / Math.max(1, prev.playback.fps))
-    )
-  }, [])
-  const handleStepForward = useCallback(() => {
-    setEditorProject((prev) =>
-      setCurrentTime(prev, prev.currentTime + 1 / Math.max(1, prev.playback.fps))
-    )
-  }, [])
-  const handleZoomIn = useCallback(() => {
-    setEditorProject((prev) => ({
-      ...prev,
-      playback: { ...prev.playback, zoom: Math.min(3, prev.playback.zoom + 0.1) },
-    }))
-  }, [])
-  const handleZoomOut = useCallback(() => {
-    setEditorProject((prev) => ({
-      ...prev,
-      playback: { ...prev.playback, zoom: Math.max(0.4, prev.playback.zoom - 0.1) },
-    }))
-  }, [])
+  const handlePlay = useCallback(() => setProjectDirect((p) => togglePlayback(p, true)), [setProjectDirect])
+  const handlePause = useCallback(() => setProjectDirect((p) => togglePlayback(p, false)), [setProjectDirect])
+  const handleSkipStart = useCallback(() => setProjectDirect((p) => setCurrentTime(p, 0)), [setProjectDirect])
+  const handleSkipEnd = useCallback(() => setProjectDirect((p) => setCurrentTime(p, p.duration)), [setProjectDirect])
+  const handleSeek = useCallback((t) => setProjectDirect((p) => setCurrentTime(p, t)), [setProjectDirect])
+  const handleStepBackward = useCallback(() => setProjectDirect((p) => setCurrentTime(p, p.currentTime - 1 / Math.max(1, p.playback.fps))), [setProjectDirect])
+  const handleStepForward = useCallback(() => setProjectDirect((p) => setCurrentTime(p, p.currentTime + 1 / Math.max(1, p.playback.fps))), [setProjectDirect])
+  const handleZoomIn = useCallback(() => setProjectDirect((p) => ({ ...p, playback: { ...p.playback, zoom: Math.min(3, p.playback.zoom + 0.1) } })), [setProjectDirect])
+  const handleZoomOut = useCallback(() => setProjectDirect((p) => ({ ...p, playback: { ...p.playback, zoom: Math.max(0.4, p.playback.zoom - 0.1) } })), [setProjectDirect])
 
-  const handleObjectSelect = useCallback((objectId) => {
-    setEditorProject((prev) => selectObject(prev, objectId))
-    setSelectedKeyframes([])
-  }, [])
-
-  const handlePropertySelect = useCallback((propertyId) => {
-    setEditorProject((prev) => selectProperty(prev, propertyId))
-    setSelectedKeyframes([])
-  }, [])
+  const handleObjectSelect = useCallback((id) => { setProjectDirect((p) => selectObject(p, id)); setSelectedKeyframes([]) }, [setProjectDirect])
+  const handlePropertySelect = useCallback((id) => { setProjectDirect((p) => selectProperty(p, id)); setSelectedKeyframes([]) }, [setProjectDirect])
 
   const handlePropertyChange = useCallback((propertyId, value) => {
     setEditorProject((prev) => {
       const objectId = prev.selectedObjectId
       if (!objectId) return prev
       let next = updateObjectBaseProperty(prev, { objectId, propertyId, value })
-      next = upsertKeyframe(next, { objectId, propertyId, time: next.currentTime, value })
-      return next
+      return upsertKeyframe(next, { objectId, propertyId, time: next.currentTime, value })
     })
-  }, [])
+  }, [setEditorProject])
 
-  const handleObjectMove = useCallback((objectId, patch, commitKeyframe = false) => {
-    setEditorProject((prev) => {
-      let next = updateObjectBaseProperties(prev, { objectId, patch })
-      if (!commitKeyframe) return next
-      for (const [key, val] of Object.entries(patch)) {
-        next = upsertKeyframe(next, { objectId, propertyId: key, time: next.currentTime, value: val })
-      }
-      return next
-    })
-  }, [])
+  const handleObjectMove = useCallback((objectId, patch, commit = false) => {
+    const fn = commit ? setEditorProject : setProjectDirect
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch, commit))
+  }, [setEditorProject, setProjectDirect])
 
-  const handleObjectResize = useCallback((objectId, patch, commitKeyframe = false) => {
-    setEditorProject((prev) => {
-      let next = updateObjectBaseProperties(prev, { objectId, patch })
-      if (!commitKeyframe) return next
-      for (const [key, val] of Object.entries(patch)) {
-        next = upsertKeyframe(next, { objectId, propertyId: key, time: next.currentTime, value: val })
-      }
-      return next
-    })
-  }, [])
+  const handleObjectResize = useCallback((objectId, patch, commit = false) => {
+    const fn = commit ? setEditorProject : setProjectDirect
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch, commit))
+  }, [setEditorProject, setProjectDirect])
 
   const handleAddTextPreset = useCallback((preset) => {
     setEditorProject((prev) => {
       const id = `obj-text-${Date.now()}`
-      const style = preset?.textStyle ?? {}
-      const fontSize = style.fontSize ?? 48
-      const object = buildObject({
-        id,
-        name: preset?.label ?? 'Text',
-        type: 'text',
+      const s = preset?.textStyle ?? {}
+      const fs = s.fontSize ?? 48
+      return appendObject(prev, buildObject({
+        id, name: preset?.label ?? 'Text', type: 'text',
         textContent: preset?.defaultText ?? preset?.label ?? 'Your text here',
         textStyle: {
-          fontFamily: style.fontFamily ?? 'Inter, sans-serif',
-          fontSize,
-          fontWeight: style.fontWeight ?? 400,
-          fontStyle: style.fontStyle ?? 'normal',
-          textDecoration: style.textDecoration ?? 'none',
-          textAlign: style.textAlign ?? 'center',
-          textTransform: style.textTransform ?? 'none',
-          lineHeight: style.lineHeight ?? 1.3,
-          letterSpacing: style.letterSpacing ?? 0,
-          textBackground: style.textBackground ?? 'transparent',
+          fontFamily: s.fontFamily ?? 'Inter, sans-serif', fontSize: fs,
+          fontWeight: s.fontWeight ?? 400, fontStyle: s.fontStyle ?? 'normal',
+          textDecoration: s.textDecoration ?? 'none', textAlign: s.textAlign ?? 'center',
+          textTransform: s.textTransform ?? 'none', lineHeight: s.lineHeight ?? 1.3,
+          letterSpacing: s.letterSpacing ?? 0, textBackground: s.textBackground ?? 'transparent',
         },
         base: {
-          left: 280, top: 240, width: 520, height: Math.ceil(fontSize * 1.4) + 16,
+          left: 280, top: 240, width: 520, height: Math.ceil(fs * 1.4) + 16,
           scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
-          fill: style.color ?? '#ffffff', stroke: '#000000', strokeWidth: 0,
+          fill: s.color ?? '#ffffff', stroke: '#000000', strokeWidth: 0,
           charSpacing: 0, lineHeight: 1.3, rx: 0, ry: 0,
           'shadow.color': '#000000', 'shadow.opacity': 0,
           'shadow.offsetX': 0, 'shadow.offsetY': 0, 'shadow.blur': 0,
         },
-      })
-      return appendObject(prev, object)
+      }))
     })
-  }, [])
+  }, [setEditorProject])
 
   const handleTextContentChange = useCallback((objectId, text) => {
-    setEditorProject((prev) =>
-      updateObjectTextField(prev, { objectId, field: 'textContent', value: text })
-    )
-  }, [])
+    setEditorProject((p) => updateObjectTextField(p, { objectId, field: 'textContent', value: text }))
+  }, [setEditorProject])
 
   const handleTextStyleChange = useCallback((objectId, field, value) => {
-    setEditorProject((prev) =>
-      updateObjectTextField(prev, { objectId, field, value })
-    )
-  }, [])
+    setEditorProject((p) => updateObjectTextField(p, { objectId, field, value }))
+  }, [setEditorProject])
 
   const handleAddShape = useCallback((shape) => {
-    setEditorProject((prev) => {
-      const id = `obj-shape-${Date.now()}`
-      const object = buildObject({
-        id,
-        name: shape?.label ?? 'Shape',
-        type: 'shape',
-        base: {
-          left: 280, top: 300, width: 240, height: 180,
-          scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
-          fill: '#14b8a6', stroke: '#ffffff', strokeWidth: 2,
-          charSpacing: 0, lineHeight: 1, rx: 20, ry: 20,
-          'shadow.color': '#000000', 'shadow.opacity': 0.2,
-          'shadow.offsetX': 0, 'shadow.offsetY': 10, 'shadow.blur': 24,
-        },
-      })
-      return appendObject(prev, object)
-    })
-  }, [])
+    setEditorProject((prev) => appendObject(prev, buildObject({
+      id: `obj-shape-${Date.now()}`, name: shape?.label ?? 'Shape', type: 'shape',
+      base: {
+        left: 280, top: 300, width: 240, height: 180,
+        scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
+        fill: '#14b8a6', stroke: '#ffffff', strokeWidth: 2,
+        charSpacing: 0, lineHeight: 1, rx: 20, ry: 20,
+        'shadow.color': '#000000', 'shadow.opacity': 0.2,
+        'shadow.offsetX': 0, 'shadow.offsetY': 10, 'shadow.blur': 24,
+      },
+    })))
+  }, [setEditorProject])
 
-  const handleUploadMedia = useCallback(() => {
-    uploadInputRef.current?.click()
-  }, [])
+  const handleUploadMedia = useCallback(() => uploadInputRef.current?.click(), [])
 
   const handleMediaSelected = useCallback((event) => {
     const file = event.target.files?.[0]
     if (!file) return
     const url = URL.createObjectURL(file)
-    const isVideo = file.type.startsWith('video/')
-    const isImage = file.type.startsWith('image/')
-    const isAudio = file.type.startsWith('audio/')
-    if (!isVideo && !isImage && !isAudio) return
-    setEditorProject((prev) => {
-      const id = `obj-media-${Date.now()}`
-      const object = buildObject({
-        id,
-        name: file.name,
-        type: isVideo ? 'video' : isImage ? 'image' : 'audio',
-        source: { url, mimeType: file.type, name: file.name },
-        base: {
-          left: 260, top: 180, width: isAudio ? 420 : 360, height: isAudio ? 80 : 220,
-          scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
-          fill: isAudio ? '#1f2937' : '#111827', stroke: '#ffffff', strokeWidth: 1,
-          charSpacing: 0, lineHeight: 1, rx: 16, ry: 16,
-          'shadow.color': '#000000', 'shadow.opacity': 0.2,
-          'shadow.offsetX': 0, 'shadow.offsetY': 8, 'shadow.blur': 16,
-        },
-      })
-      return appendObject(prev, object)
-    })
+    const t = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : file.type.startsWith('audio/') ? 'audio' : null
+    if (!t) return
+    const isAudio = t === 'audio'
+    setEditorProject((prev) => appendObject(prev, buildObject({
+      id: `obj-media-${Date.now()}`, name: file.name, type: t,
+      source: { url, mimeType: file.type, name: file.name },
+      base: {
+        left: 260, top: 180, width: isAudio ? 420 : 360, height: isAudio ? 80 : 220,
+        scaleX: 1, scaleY: 1, angle: 0, opacity: 1,
+        fill: isAudio ? '#1f2937' : '#111827', stroke: '#ffffff', strokeWidth: 1,
+        charSpacing: 0, lineHeight: 1, rx: 16, ry: 16,
+        'shadow.color': '#000000', 'shadow.opacity': 0.2,
+        'shadow.offsetX': 0, 'shadow.offsetY': 8, 'shadow.blur': 16,
+      },
+    })))
     event.target.value = ''
-  }, [])
+  }, [setEditorProject])
 
-  // Arrow keys to nudge selected object
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (!editorProject.selectedObjectId) return
-      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) return
-      const arrows = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
-      if (!arrows.includes(event.key)) return
-      event.preventDefault()
-      const step = event.shiftKey ? 10 : 1
-      const obj = selectedObject
-      if (!obj) return
-      const left = obj.base?.left ?? 0
-      const top = obj.base?.top ?? 0
-      const patch =
-        event.key === 'ArrowLeft' ? { left: left - step } :
-        event.key === 'ArrowRight' ? { left: left + step } :
-        event.key === 'ArrowUp' ? { top: top - step } :
-        { top: top + step }
-      handleObjectMove(editorProject.selectedObjectId, patch, true)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [editorProject.selectedObjectId, selectedObject, handleObjectMove])
+  // --- Layer actions ---
+  const handleDeleteObject = useCallback((id) => setEditorProject((p) => removeObject(p, id)), [setEditorProject])
+  const handleDuplicateObject = useCallback((id) => setEditorProject((p) => duplicateObject(p, id)), [setEditorProject])
+  const handleBringToFront = useCallback((id) => setEditorProject((p) => bringToFront(p, id)), [setEditorProject])
+  const handleSendToBack = useCallback((id) => setEditorProject((p) => sendToBack(p, id)), [setEditorProject])
+  const handleMoveObjectUp = useCallback((id) => setEditorProject((p) => moveObjectUp(p, id)), [setEditorProject])
+  const handleMoveObjectDown = useCallback((id) => setEditorProject((p) => moveObjectDown(p, id)), [setEditorProject])
+  const handleToggleVisibility = useCallback((id) => setEditorProject((p) => toggleObjectVisibility(p, id)), [setEditorProject])
+  const handleToggleLock = useCallback((id) => setEditorProject((p) => toggleObjectLock(p, id)), [setEditorProject])
+  const handleRenameObject = useCallback((id, name) => setEditorProject((p) => renameObject(p, id, name)), [setEditorProject])
 
+  // --- Keyframe handlers ---
   const handleToggleKeyframe = useCallback(() => {
     setEditorProject((prev) => {
       const object = getSelectedObject(prev)
       if (!object) return prev
       const propertyId = prev.selectedPropertyId
-      const hasKey = hasKeyframeAtTime(object, propertyId, prev.currentTime)
-      if (hasKey) {
+      if (hasKeyframeAtTime(object, propertyId, prev.currentTime)) {
         setSelectedKeyframes([])
         return removeKeyframe(prev, { objectId: object.id, propertyId, time: prev.currentTime })
       }
-      const keyValue = object.base[propertyId] ?? 0
-      return upsertKeyframe(prev, { objectId: object.id, propertyId, time: prev.currentTime, value: keyValue })
+      return upsertKeyframe(prev, { objectId: object.id, propertyId, time: prev.currentTime, value: object.base[propertyId] ?? 0 })
     })
-  }, [])
+  }, [setEditorProject])
 
   const handleUpdateKeyframeTimes = useCallback((nextKeys) => {
     setEditorProject((prev) => {
       const object = getSelectedObject(prev)
       if (!object) return prev
-      return replaceKeyframes(prev, {
-        objectId: object.id,
-        propertyId: prev.selectedPropertyId,
-        keyframes: nextKeys,
-      })
+      return replaceKeyframes(prev, { objectId: object.id, propertyId: prev.selectedPropertyId, keyframes: nextKeys })
     })
-  }, [])
+  }, [setEditorProject])
 
   const handleDeleteKeyframes = useCallback(() => {
     setEditorProject((prev) => {
       const object = getSelectedObject(prev)
       if (!object || selectedKeyframes.length === 0) return prev
-      const times = selectedKeyframes
-        .map((id) => Number(String(id).split(':')[1]))
-        .filter((t) => Number.isFinite(t))
-      return deleteKeyframesByTimes(prev, {
-        objectId: object.id,
-        propertyId: prev.selectedPropertyId,
-        times,
-      })
+      const times = selectedKeyframes.map((id) => Number(String(id).split(':')[1])).filter((t) => Number.isFinite(t))
+      return deleteKeyframesByTimes(prev, { objectId: object.id, propertyId: prev.selectedPropertyId, times })
     })
     setSelectedKeyframes([])
-  }, [selectedKeyframes])
+  }, [selectedKeyframes, setEditorProject])
 
   const handleDuplicateKeyframes = useCallback(() => {
     setEditorProject((prev) => {
       const object = getSelectedObject(prev)
       if (!object || selectedKeyframes.length === 0) return prev
-      const fps = Math.max(1, prev.playback.fps)
-      const dt = 1 / fps
+      const dt = 1 / Math.max(1, prev.playback.fps)
       const lane = object.keyframes[prev.selectedPropertyId] ?? []
       const selectedSet = new Set(selectedKeyframes)
-      const duplicates = lane
-        .filter((key) =>
-          selectedSet.has(`${prev.selectedPropertyId}:${Number(key.t).toFixed(4)}`)
-        )
-        .map((key) => ({
-          t: Math.min(prev.duration, key.t + dt),
-          value: key.value,
-        }))
-      return replaceKeyframes(prev, {
-        objectId: object.id,
-        propertyId: prev.selectedPropertyId,
-        keyframes: [...lane, ...duplicates],
-      })
+      const dupes = lane
+        .filter((k) => selectedSet.has(`${prev.selectedPropertyId}:${Number(k.t).toFixed(4)}`))
+        .map((k) => ({ t: Math.min(prev.duration, k.t + dt), value: k.value }))
+      return replaceKeyframes(prev, { objectId: object.id, propertyId: prev.selectedPropertyId, keyframes: [...lane, ...dupes] })
     })
-  }, [selectedKeyframes])
+  }, [selectedKeyframes, setEditorProject])
 
+  // --- Export ---
   const handleExportRun = useCallback(async ({ format, resolution }) => {
     if (exportAbortRef.current) exportAbortRef.current.abort()
-    const abortController = new AbortController()
-    exportAbortRef.current = abortController
+    const ac = new AbortController()
+    exportAbortRef.current = ac
     setExportState({ status: 'exporting', progress: 0, error: null })
     try {
-      const result = await runExportJob({
-        project: projectRef.current,
-        format,
-        resolution,
-        signal: abortController.signal,
-        onProgress: (progress) =>
-          setExportState({ status: 'exporting', progress, error: null }),
-      })
+      const result = await runExportJob({ project: projectRef.current, format, resolution, signal: ac.signal, onProgress: (p) => setExportState({ status: 'exporting', progress: p, error: null }) })
       triggerBrowserDownload(result)
       setExportState({ status: 'done', progress: 100, error: null })
-    } catch (error) {
-      setExportState({
-        status: 'error',
-        progress: 0,
-        error: error instanceof Error ? error.message : 'Export failed',
-      })
+    } catch (err) {
+      setExportState({ status: 'error', progress: 0, error: err instanceof Error ? err.message : 'Export failed' })
     }
   }, [])
 
-  useEffect(() => {
-    return () => { if (exportAbortRef.current) exportAbortRef.current.abort() }
-  }, [])
+  useEffect(() => () => { if (exportAbortRef.current) exportAbortRef.current.abort() }, [])
+
+  const layerActions = useMemo(() => ({
+    onSelect: handleObjectSelect,
+    onDelete: handleDeleteObject,
+    onDuplicate: handleDuplicateObject,
+    onBringToFront: handleBringToFront,
+    onSendToBack: handleSendToBack,
+    onMoveUp: handleMoveObjectUp,
+    onMoveDown: handleMoveObjectDown,
+    onToggleVisibility: handleToggleVisibility,
+    onToggleLock: handleToggleLock,
+    onRename: handleRenameObject,
+  }), [handleObjectSelect, handleDeleteObject, handleDuplicateObject, handleBringToFront, handleSendToBack, handleMoveObjectUp, handleMoveObjectDown, handleToggleVisibility, handleToggleLock, handleRenameObject])
 
   return (
     <>
@@ -511,12 +438,17 @@ function App() {
             onProjectNameChange={handleProjectNameChange}
             onExport={handleExport}
             onShare={handleShare}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={canUndoNow}
+            canRedo={canRedoNow}
           />
         }
         leftPanel={
           <LeftPanel
-            tabs={LEFT_TABS}
-            tracks={tracks}
+            objects={editorProject.objects}
+            selectedObjectId={editorProject.selectedObjectId}
+            layerActions={layerActions}
             panelActions={{
               onAddTextPreset: handleAddTextPreset,
               onAddShape: handleAddShape,
@@ -534,6 +466,8 @@ function App() {
             onToggleKeyframe={handleToggleKeyframe}
             isKeyframedAtCurrentTime={isKeyframedAtCurrentTime}
             onTextStyleChange={handleTextStyleChange}
+            onDelete={handleDeleteObject}
+            onDuplicate={handleDuplicateObject}
           />
         }
         timeline={
@@ -541,7 +475,7 @@ function App() {
             isPlaying={isPlaying}
             currentTime={currentTime}
             duration={duration}
-            tracks={tracks}
+            tracks={editorProject.tracks}
             onPlay={handlePlay}
             onPause={handlePause}
             onSkipToStart={handleSkipStart}
@@ -578,25 +512,10 @@ function App() {
           onTextStyleChange={handleTextStyleChange}
         />
       </EditorShell>
-      <input
-        ref={uploadInputRef}
-        type="file"
-        accept="image/*,video/*,audio/*"
-        style={{ display: 'none' }}
-        onChange={handleMediaSelected}
-      />
+      <input ref={uploadInputRef} type="file" accept="image/*,video/*,audio/*" style={{ display: 'none' }} onChange={handleMediaSelected} />
       <SaveToast status={saveStatus} />
-      <ExportModal
-        open={exportModalOpen}
-        onClose={() => setExportModalOpen(false)}
-        onExport={handleExportRun}
-        exportState={exportState}
-      />
-      <ShareModal
-        open={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        projectName={projectName}
-      />
+      <ExportModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} onExport={handleExportRun} exportState={exportState} />
+      <ShareModal open={shareModalOpen} onClose={() => setShareModalOpen(false)} projectName={projectName} />
     </>
   )
 }
