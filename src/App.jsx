@@ -59,9 +59,8 @@ function buildObject({ id, name, type, base, textContent = '', textStyle = null,
   }
 }
 
-function applyPatchWithOptionalKeyframes(prev, objectId, patch, commit) {
+function applyPatchWithOptionalKeyframes(prev, objectId, patch) {
   let next = updateObjectBaseProperties(prev, { objectId, patch })
-  if (!commit) return next
   for (const [key, val] of Object.entries(patch)) {
     next = upsertKeyframe(next, { objectId, propertyId: key, time: next.currentTime, value: val })
   }
@@ -153,17 +152,17 @@ function App() {
 
   const handleObjectMove = useCallback((objectId, patch, commit = false) => {
     const fn = commit ? setEditorProject : setProjectDirect
-    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch, commit))
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch))
   }, [setEditorProject, setProjectDirect])
 
   const handleObjectResize = useCallback((objectId, patch, commit = false) => {
     const fn = commit ? setEditorProject : setProjectDirect
-    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch, commit))
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, patch))
   }, [setEditorProject, setProjectDirect])
 
   const handleObjectRotate = useCallback((objectId, angle, commit = false) => {
     const fn = commit ? setEditorProject : setProjectDirect
-    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, { angle }, commit))
+    fn((prev) => applyPatchWithOptionalKeyframes(prev, objectId, { angle }))
   }, [setEditorProject, setProjectDirect])
 
   const handleAddTextPreset = useCallback((preset) => {

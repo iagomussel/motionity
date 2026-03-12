@@ -394,6 +394,7 @@ const CanvasObject = memo(function CanvasObject({
   onSelectObject, onMoveObject, onResizeObject, onRotateObject,
   onTextContentChange, onSetEditingId,
   isPlaying, currentTime,
+  snapPosition, clearGuides,
 }) {
   const value = object.resolved
   const left = Number(value.left) || 0
@@ -411,6 +412,8 @@ const CanvasObject = memo(function CanvasObject({
   const ts = object.textStyle ?? {}
   const rafRef = useRef(null)
   const wrapperRef = useRef(null)
+  const [interactionState, setInteractionState] = useState(null) // null | 'dragging' | 'resizing' | 'rotating'
+  const [ghostRect, setGhostRect] = useState(null) // { left, top, width, height } for original position ghost
 
   // ---- Drag to move ----
   const startDrag = useCallback((event) => {
@@ -425,11 +428,23 @@ const CanvasObject = memo(function CanvasObject({
     let lastPatch = null
     let moved = false
 
+    setGhostRect({ left: startLeft, top: startTop, width, height })
+
     const onMove = (moveEvent) => {
-      moved = true
+      if (!moved) {
+        moved = true
+        setInteractionState('dragging')
+      }
       const dx = (moveEvent.clientX - startX) / Math.max(0.0001, effectiveZoom)
       const dy = (moveEvent.clientY - startY) / Math.max(0.0001, effectiveZoom)
-      lastPatch = { left: Math.round(startLeft + dx), top: Math.round(startTop + dy) }
+      let newLeft = Math.round(startLeft + dx)
+      let newTop = Math.round(startTop + dy)
+      if (snapPosition) {
+        const snapped = snapPosition(object.id, newLeft, newTop, width, height)
+        newLeft = snapped.left
+        newTop = snapped.top
+      }
+      lastPatch = { left: newLeft, top: newTop }
       if (!rafRef.current) {
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null
@@ -439,17 +454,27 @@ const CanvasObject = memo(function CanvasObject({
     }
     const onUp = (upEvent) => {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+      setInteractionState(null)
+      setGhostRect(null)
+      clearGuides?.()
       if (moved) {
         const dx = (upEvent.clientX - startX) / Math.max(0.0001, effectiveZoom)
         const dy = (upEvent.clientY - startY) / Math.max(0.0001, effectiveZoom)
-        onMoveObject?.(object.id, { left: Math.round(startLeft + dx), top: Math.round(startTop + dy) }, true)
+        let newLeft = Math.round(startLeft + dx)
+        let newTop = Math.round(startTop + dy)
+        if (snapPosition) {
+          const snapped = snapPosition(object.id, newLeft, newTop, width, height)
+          newLeft = snapped.left
+          newTop = snapped.top
+        }
+        onMoveObject?.(object.id, { left: newLeft, top: newTop }, true)
       }
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
-  }, [isEditing, object.id, object.locked, left, top, effectiveZoom, onSelectObject, onMoveObject])
+  }, [isEditing, object.id, object.locked, left, top, width, height, effectiveZoom, onSelectObject, onMoveObject, snapPosition, clearGuides])
 
   // ---- 8-handle resize ----
   const startResize = useCallback((event, handle) => {
@@ -466,12 +491,18 @@ const CanvasObject = memo(function CanvasObject({
     const sinA = Math.sin(angleRad)
     let lastPatch = null
     let raf = null
+    let resized = false
+
+    setGhostRect({ left: startLeft, top: startTop, width: startW, height: startH })
 
     const onMove = (moveEvent) => {
+      if (!resized) {
+        resized = true
+        setInteractionState('resizing')
+      }
       const rawDx = (moveEvent.clientX - startX) / Math.max(0.0001, effectiveZoom)
       const rawDy = (moveEvent.clientY - startY) / Math.max(0.0001, effectiveZoom)
 
-      // Rotate mouse delta into object-local coordinates
       const localDx = rawDx * cosA + rawDy * sinA
       const localDy = -rawDx * sinA + rawDy * cosA
 
@@ -483,7 +514,6 @@ const CanvasObject = memo(function CanvasObject({
       const dw = newW - startW
       const dh = newH - startH
 
-      // Position offset in world coordinates for handles that shift origin
       const offsetLocalX = (handle.dx || 0) * dw
       const offsetLocalY = (handle.dy || 0) * dh
       const worldOffsetX = offsetLocalX * cosA - offsetLocalY * sinA
@@ -504,6 +534,8 @@ const CanvasObject = memo(function CanvasObject({
     }
     const onUp = () => {
       if (raf) { cancelAnimationFrame(raf); raf = null }
+      setInteractionState(null)
+      setGhostRect(null)
       if (lastPatch) onResizeObject?.(object.id, lastPatch, true)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -528,17 +560,20 @@ const CanvasObject = memo(function CanvasObject({
     const startMouseAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180 / Math.PI
     let lastAngle = startAngle
     let raf = null
+    let rotated = false
 
     const onMove = (moveEvent) => {
+      if (!rotated) {
+        rotated = true
+        setInteractionState('rotating')
+      }
       const mouseAngle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX) * 180 / Math.PI
       let newAngle = startAngle + (mouseAngle - startMouseAngle)
 
-      // Snap to 15-degree increments when holding Shift
       if (moveEvent.shiftKey) {
         newAngle = Math.round(newAngle / 15) * 15
       }
 
-      // Normalize to 0-360
       newAngle = ((newAngle % 360) + 360) % 360
       lastAngle = Math.round(newAngle * 10) / 10
 
@@ -551,6 +586,7 @@ const CanvasObject = memo(function CanvasObject({
     }
     const onUp = () => {
       if (raf) { cancelAnimationFrame(raf); raf = null }
+      setInteractionState(null)
       onRotateObject?.(object.id, lastAngle, true)
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
@@ -582,6 +618,11 @@ const CanvasObject = memo(function CanvasObject({
   const fi = value['filter.invert']; if (fi != null && fi > 0) filterParts.push(`invert(${fi}%)`)
   const cssFilter = filterParts.length > 0 ? filterParts.join(' ') : undefined
 
+  const isInteracting = interactionState != null
+  const isDragging = interactionState === 'dragging'
+  const isResizing = interactionState === 'resizing'
+  const isRotating = interactionState === 'rotating'
+
   const wrapperStyle = {
     position: 'absolute',
     left: `${left * effectiveZoom}px`,
@@ -594,10 +635,19 @@ const CanvasObject = memo(function CanvasObject({
     transformOrigin: 'center center',
     opacity,
     filter: cssFilter,
-    cursor: isEditing ? 'text' : object.locked ? 'not-allowed' : 'move',
-    zIndex: isEditing ? 10 : isSelected ? 5 : 2,
+    cursor: isEditing ? 'text' : object.locked ? 'not-allowed' : isDragging ? 'grabbing' : 'move',
+    zIndex: isInteracting ? 20 : isEditing ? 10 : isSelected ? 5 : 2,
     userSelect: isEditing ? 'text' : 'none',
     willChange: 'transform, left, top',
+    transition: isInteracting ? 'none' : 'box-shadow 200ms ease-out',
+  }
+
+  // Interaction shadow: elevated drop-shadow during drag/resize/rotate
+  if (isInteracting) {
+    wrapperStyle.boxShadow = [
+      `0 ${8 * effectiveZoom}px ${24 * effectiveZoom}px rgba(124,58,237,0.25)`,
+      `0 ${2 * effectiveZoom}px ${6 * effectiveZoom}px rgba(0,0,0,0.35)`,
+    ].join(', ')
   }
 
   // Text background & border (not for shapes -- shapes use SVG)
@@ -613,6 +663,26 @@ const CanvasObject = memo(function CanvasObject({
   }
 
   return (
+    <>
+    {/* Ghost outline at original position during drag/resize */}
+    {ghostRect && isInteracting && (
+      <div
+        style={{
+          position: 'absolute',
+          left: `${ghostRect.left * effectiveZoom}px`,
+          top: `${ghostRect.top * effectiveZoom}px`,
+          width: `${ghostRect.width * effectiveZoom}px`,
+          height: `${ghostRect.height * effectiveZoom}px`,
+          border: `${Math.max(1, 1.5 * effectiveZoom)}px dashed rgba(124,58,237,0.5)`,
+          borderRadius: isShape ? 0 : `${Math.max(Number(value.rx) || 0, Number(value.ry) || 0) * effectiveZoom}px`,
+          transform: `rotate(${isDragging ? angle : 0}deg)`,
+          transformOrigin: 'center center',
+          pointerEvents: 'none',
+          zIndex: 1,
+          background: 'rgba(124,58,237,0.04)',
+        }}
+      />
+    )}
     <div
       ref={wrapperRef}
       onClick={(e) => { e.stopPropagation(); if (!isEditing) onSelectObject?.(object.id) }}
@@ -712,7 +782,43 @@ const CanvasObject = memo(function CanvasObject({
           pointerEvents: 'none',
         }} />
       ) : null}
+
+      {/* Interaction feedback overlay (subtle glow during drag/resize) */}
+      {isInteracting && isSelected && (
+        <div style={{
+          position: 'absolute', inset: -2,
+          border: `2px solid rgba(124,58,237,0.6)`,
+          borderRadius: isShape ? 0 : `${Math.max(Number(value.rx) || 0, Number(value.ry) || 0) * effectiveZoom + 2}px`,
+          pointerEvents: 'none',
+          boxShadow: `0 0 ${12 * effectiveZoom}px rgba(124,58,237,0.3)`,
+        }} />
+      )}
+
+      {/* Dimension/position tooltip during interaction */}
+      {isInteracting && isSelected && (
+        <div style={{
+          position: 'absolute',
+          left: '50%', bottom: `${-24 * effectiveZoom}px`,
+          transform: 'translateX(-50%)',
+          background: 'rgba(15,23,42,0.92)',
+          color: '#e2e8f0',
+          padding: `${2 * effectiveZoom}px ${6 * effectiveZoom}px`,
+          borderRadius: `${4 * effectiveZoom}px`,
+          fontSize: `${10 * effectiveZoom}px`,
+          fontFamily: 'monospace',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 40,
+          border: '1px solid rgba(124,58,237,0.3)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        }}>
+          {isDragging && `${Math.round(left)}, ${Math.round(top)}`}
+          {isResizing && `${Math.round(width)} x ${Math.round(height)}`}
+          {isRotating && `${Math.round(angle * 10) / 10}\u00B0`}
+        </div>
+      )}
     </div>
+    </>
   )
 })
 
