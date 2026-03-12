@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { duplicateObject, removeObject, selectObject } from '../project/editorState.js'
+import {
+  duplicateObject, removeObject, selectObject, togglePlayback,
+  updateObjectBaseProperties, upsertKeyframe,
+} from '../project/editorState.js'
 import { isSaveShortcut } from '../project/hotkeys.js'
 import { saveCurrentProject } from '../project/storage.js'
-import { togglePlayback } from '../project/editorState.js'
 
 function nowIso() { return new Date().toISOString() }
 
@@ -43,7 +45,6 @@ export function useKeyboardShortcuts({
   const [showShortcuts, setShowShortcuts] = useState(false)
 
   const applyPatch = useCallback((prev, objectId, patch) => {
-    const { updateObjectBaseProperties, upsertKeyframe } = require('../project/editorState.js')
     let next = updateObjectBaseProperties(prev, { objectId, patch })
     for (const [key, val] of Object.entries(patch)) {
       next = upsertKeyframe(next, { objectId, propertyId: key, time: next.currentTime, value: val })

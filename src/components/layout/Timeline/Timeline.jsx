@@ -180,6 +180,7 @@ export function Timeline({
   onSelectObject,
   onTrimObject,
   onSlideObject,
+  onSplitObject,
   onPlay,
   onPause,
   onSeek,
@@ -370,6 +371,13 @@ export function Timeline({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18h2V6h-2v12zM6 18l8.5-6L6 6v12z"/></svg>
           </button>
         </div>
+
+        <button className={styles['transport-btn']} onClick={onSplitObject} title="Split clip at playhead (S)"
+          style={{ marginLeft: 4, borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: 6 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="12" y1="2" x2="12" y2="22"/><polyline points="8 6 12 2 16 6"/><polyline points="8 18 12 22 16 18"/>
+          </svg>
+        </button>
 
         <span className={styles.timecode}>{formatTime(currentTime)}</span>
         <span className={styles.duration}>/ {formatTime(duration)}</span>

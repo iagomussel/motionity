@@ -35,6 +35,9 @@ export function TopBar({
   onRedo,
   canUndo = false,
   canRedo = false,
+  aspectRatio = '16:9',
+  aspectRatios = [],
+  onAspectRatioChange,
   children,
 }) {
   const [editingName, setEditingName] = useState(false)
@@ -91,6 +94,25 @@ export function TopBar({
           spellCheck={false}
         />
       </div>
+
+      {aspectRatios.length > 0 && (
+        <div className={styles.actions}>
+          <select
+            value={aspectRatio}
+            onChange={(e) => onAspectRatioChange?.(e.target.value)}
+            style={{
+              background: 'var(--color-surface-overlay)', border: '1px solid var(--color-border)',
+              borderRadius: 6, color: 'var(--color-text-primary)', padding: '4px 8px',
+              fontSize: 12, cursor: 'pointer',
+            }}
+            title="Canvas aspect ratio"
+          >
+            {aspectRatios.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className={styles.actions}>
         <Button variant="ghost" size="sm" onClick={onShare}>

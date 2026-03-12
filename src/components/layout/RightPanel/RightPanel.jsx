@@ -1,3 +1,4 @@
+import { TEXT_ANIMATION_PRESETS } from '../../../project/animationEngine.js'
 import styles from './RightPanel.module.css'
 
 // ---------------------------------------------------------------------------
@@ -8,7 +9,9 @@ const FONT_OPTIONS = [
   'Inter, sans-serif', 'Space Grotesk, sans-serif', 'Arial, sans-serif',
   'Georgia, serif', 'Times New Roman, serif', 'Courier New, monospace',
   'Verdana, sans-serif', 'Trebuchet MS, sans-serif', 'Impact, sans-serif',
-  'Palatino, serif',
+  'Palatino, serif', 'Roboto, sans-serif', 'Poppins, sans-serif',
+  'Montserrat, sans-serif', 'Lato, sans-serif', 'Oswald, sans-serif',
+  'Playfair Display, serif', 'Merriweather, serif', 'Source Code Pro, monospace',
 ]
 
 function Field({ label, children }) {
@@ -82,6 +85,16 @@ function ActionButton({ onClick, title, danger, children }) {
   )
 }
 
+function SliderField({ label, value, onChange, min = 0, max = 200, step = 1, unit = '' }) {
+  return (
+    <Field label={`${label}: ${Math.round(value)}${unit}`}>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{ width: '100%', accentColor: '#7c3aed' }} />
+    </Field>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Text style controls
 // ---------------------------------------------------------------------------
@@ -128,6 +141,71 @@ function TextStyleControls({ selectedObject, onTextStyleChange }) {
 }
 
 // ---------------------------------------------------------------------------
+// Filter controls
+// ---------------------------------------------------------------------------
+
+function FilterControls({ selectedObject, onPropertyChange, filterPresets, onApplyFilterPreset }) {
+  if (!selectedObject) return null
+  const b = selectedObject.base ?? {}
+  const id = selectedObject.id
+
+  return (
+    <>
+      <SectionLabel>Filters</SectionLabel>
+      {filterPresets && filterPresets.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+          {filterPresets.map((p) => (
+            <button key={p.id} type="button" onClick={() => onApplyFilterPreset?.(id, p.values)}
+              style={{
+                padding: '3px 10px', borderRadius: 12, border: '1px solid var(--color-border)',
+                background: 'var(--color-surface-overlay)', color: 'var(--color-text-secondary)',
+                cursor: 'pointer', fontSize: 11, fontWeight: 500,
+                transition: 'background 120ms ease-out',
+              }}
+            >{p.label}</button>
+          ))}
+        </div>
+      )}
+      <SliderField label="Brightness" value={b['filter.brightness'] ?? 100} onChange={(v) => onPropertyChange?.('filter.brightness', v)} min={0} max={200} unit="%" />
+      <SliderField label="Contrast" value={b['filter.contrast'] ?? 100} onChange={(v) => onPropertyChange?.('filter.contrast', v)} min={0} max={200} unit="%" />
+      <SliderField label="Saturation" value={b['filter.saturate'] ?? 100} onChange={(v) => onPropertyChange?.('filter.saturate', v)} min={0} max={200} unit="%" />
+      <SliderField label="Blur" value={b['filter.blur'] ?? 0} onChange={(v) => onPropertyChange?.('filter.blur', v)} min={0} max={20} step={0.5} unit="px" />
+      <SliderField label="Grayscale" value={b['filter.grayscale'] ?? 0} onChange={(v) => onPropertyChange?.('filter.grayscale', v)} min={0} max={100} unit="%" />
+      <SliderField label="Sepia" value={b['filter.sepia'] ?? 0} onChange={(v) => onPropertyChange?.('filter.sepia', v)} min={0} max={100} unit="%" />
+      <SliderField label="Hue Rotate" value={b['filter.hueRotate'] ?? 0} onChange={(v) => onPropertyChange?.('filter.hueRotate', v)} min={-180} max={180} unit="deg" />
+      <SliderField label="Invert" value={b['filter.invert'] ?? 0} onChange={(v) => onPropertyChange?.('filter.invert', v)} min={0} max={100} unit="%" />
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Text Animation Section
+// ---------------------------------------------------------------------------
+
+function TextAnimationSection({ selectedObject, onApplyTextAnimation }) {
+  if (!selectedObject || selectedObject.type !== 'text') return null
+
+  return (
+    <>
+      <SectionLabel>Text Animation</SectionLabel>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {TEXT_ANIMATION_PRESETS.map((p) => (
+          <button key={p.id} type="button"
+            onClick={() => onApplyTextAnimation?.(selectedObject.id, p.apply)}
+            style={{
+              padding: '3px 10px', borderRadius: 12, border: '1px solid var(--color-border)',
+              background: 'var(--color-surface-overlay)', color: 'var(--color-text-secondary)',
+              cursor: 'pointer', fontSize: 11, fontWeight: 500,
+              transition: 'background 120ms ease-out',
+            }}
+          >{p.label}</button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // RightPanel
 // ---------------------------------------------------------------------------
 
@@ -147,6 +225,12 @@ export function RightPanel({
   onMediaPropertyChange,
   onTrimObject,
   projectDuration = 15,
+  filterPresets = [],
+  onApplyFilterPreset,
+  easingOptions = [],
+  selectedKeyframes = [],
+  onSetKeyframeEasing,
+  onApplyTextAnimation,
 }) {
   const classes = [styles['right-panel'], open ? styles.open : ''].filter(Boolean).join(' ')
   const isText = selectedObject?.type === 'text'
@@ -200,7 +284,21 @@ export function RightPanel({
                 </div>
               )}
 
-              {/* Clip timing (In / Out) */}
+              {/* Filters */}
+              <FilterControls
+                selectedObject={selectedObject}
+                onPropertyChange={onPropertyChange}
+                filterPresets={filterPresets}
+                onApplyFilterPreset={onApplyFilterPreset}
+              />
+
+              {/* Text Animations */}
+              <TextAnimationSection
+                selectedObject={selectedObject}
+                onApplyTextAnimation={onApplyTextAnimation}
+              />
+
+              {/* Clip timing */}
               <SectionLabel>Clip Timing</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <NumericField label="In (sec)" value={Number(vr.start.toFixed(2))}
@@ -211,7 +309,7 @@ export function RightPanel({
                   step={0.1} min={vr.start + 0.1} max={projectDuration} />
               </div>
 
-              {/* Audio controls for video/audio */}
+              {/* Audio controls */}
               {isMedia && (
                 <>
                   <SectionLabel>Audio</SectionLabel>
@@ -254,13 +352,31 @@ export function RightPanel({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'end' }}>
                 <Field label="Property">
                   <select value={selectedPropertyId} onChange={(e) => onSelectProperty?.(e.target.value)} style={inputStyle}>
-                    <option value="left">X</option><option value="top">Y</option>
-                    <option value="width">Width</option><option value="height">Height</option>
-                    <option value="scaleX">Scale X</option><option value="scaleY">Scale Y</option>
-                    <option value="opacity">Opacity</option><option value="fill">Fill</option>
-                    <option value="stroke">Stroke</option><option value="strokeWidth">Stroke Width</option>
-                    <option value="angle">Rotation</option><option value="rx">Corner Radius</option>
-                    <option value="shadow.blur">Shadow Blur</option><option value="shadow.opacity">Shadow Opacity</option>
+                    <optgroup label="Position">
+                      <option value="left">X</option><option value="top">Y</option>
+                      <option value="width">Width</option><option value="height">Height</option>
+                    </optgroup>
+                    <optgroup label="Transform">
+                      <option value="scaleX">Scale X</option><option value="scaleY">Scale Y</option>
+                      <option value="angle">Rotation</option><option value="opacity">Opacity</option>
+                    </optgroup>
+                    <optgroup label="Appearance">
+                      <option value="fill">Fill</option><option value="stroke">Stroke</option>
+                      <option value="strokeWidth">Stroke Width</option><option value="rx">Corner Radius</option>
+                    </optgroup>
+                    <optgroup label="Shadow">
+                      <option value="shadow.blur">Shadow Blur</option><option value="shadow.opacity">Shadow Opacity</option>
+                      <option value="shadow.offsetX">Shadow X</option><option value="shadow.offsetY">Shadow Y</option>
+                    </optgroup>
+                    <optgroup label="Filters">
+                      <option value="filter.brightness">Brightness</option>
+                      <option value="filter.contrast">Contrast</option>
+                      <option value="filter.saturate">Saturation</option>
+                      <option value="filter.blur">Blur</option>
+                      <option value="filter.grayscale">Grayscale</option>
+                      <option value="filter.sepia">Sepia</option>
+                      <option value="filter.hueRotate">Hue Rotate</option>
+                    </optgroup>
                   </select>
                 </Field>
                 <button type="button" onClick={() => onToggleKeyframe?.()}
@@ -271,8 +387,26 @@ export function RightPanel({
                     cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                   title={isKeyframedAtCurrentTime ? 'Remove keyframe' : 'Add keyframe'}
-                >{isKeyframedAtCurrentTime ? '◆' : '◇'}</button>
+                >{isKeyframedAtCurrentTime ? '\u25C6' : '\u25C7'}</button>
               </div>
+
+              {/* Easing selector */}
+              {selectedKeyframes.length > 0 && easingOptions.length > 0 && (
+                <>
+                  <SectionLabel>Easing</SectionLabel>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {easingOptions.map((e) => (
+                      <button key={e.id} type="button" onClick={() => onSetKeyframeEasing?.(e.id)}
+                        style={{
+                          padding: '3px 10px', borderRadius: 12, border: '1px solid var(--color-border)',
+                          background: 'var(--color-surface-overlay)', color: 'var(--color-text-secondary)',
+                          cursor: 'pointer', fontSize: 11, fontWeight: 500,
+                        }}
+                      >{e.label}</button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <SectionLabel>Actions</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

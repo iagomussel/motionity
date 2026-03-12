@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, memo } from 'react'
+import { useSnapGuides } from '../../../hooks/useSnapGuides.js'
 import styles from './CanvasArea.module.css'
 
 const ToolIcons = {
@@ -569,6 +570,18 @@ const CanvasObject = memo(function CanvasObject({
     blur: (Number(value['shadow.blur']) || 0),
   }
 
+  // Build CSS filter string from resolved values
+  const filterParts = []
+  const fb = value['filter.brightness']; if (fb != null && fb !== 100) filterParts.push(`brightness(${fb}%)`)
+  const fc = value['filter.contrast']; if (fc != null && fc !== 100) filterParts.push(`contrast(${fc}%)`)
+  const fs = value['filter.saturate']; if (fs != null && fs !== 100) filterParts.push(`saturate(${fs}%)`)
+  const fbl = value['filter.blur']; if (fbl != null && fbl > 0) filterParts.push(`blur(${fbl * effectiveZoom}px)`)
+  const fg = value['filter.grayscale']; if (fg != null && fg > 0) filterParts.push(`grayscale(${fg}%)`)
+  const fse = value['filter.sepia']; if (fse != null && fse > 0) filterParts.push(`sepia(${fse}%)`)
+  const fh = value['filter.hueRotate']; if (fh != null && fh !== 0) filterParts.push(`hue-rotate(${fh}deg)`)
+  const fi = value['filter.invert']; if (fi != null && fi > 0) filterParts.push(`invert(${fi}%)`)
+  const cssFilter = filterParts.length > 0 ? filterParts.join(' ') : undefined
+
   const wrapperStyle = {
     position: 'absolute',
     left: `${left * effectiveZoom}px`,
@@ -580,6 +593,7 @@ const CanvasObject = memo(function CanvasObject({
     transform: `rotate(${angle}deg)`,
     transformOrigin: 'center center',
     opacity,
+    filter: cssFilter,
     cursor: isEditing ? 'text' : object.locked ? 'not-allowed' : 'move',
     zIndex: isEditing ? 10 : isSelected ? 5 : 2,
     userSelect: isEditing ? 'text' : 'none',
@@ -730,6 +744,14 @@ export function CanvasArea({
   const [fitZoom, setFitZoom] = useState(1)
   const [editingTextId, setEditingTextId] = useState(null)
 
+  const effectiveZoomForSnap = fitZoom * zoom
+  const { guides, snapPosition, clearGuides } = useSnapGuides({
+    objects: renderObjects,
+    canvasWidth,
+    canvasHeight,
+    effectiveZoom: effectiveZoomForSnap,
+  })
+
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -793,6 +815,25 @@ export function CanvasArea({
             onSetEditingId={setEditingTextId}
             isPlaying={isPlaying}
             currentTime={currentTime}
+            snapPosition={snapPosition}
+            clearGuides={clearGuides}
+          />
+        ))}
+
+        {/* Snap guide lines */}
+        {guides.map((g, i) => (
+          <div
+            key={`guide-${i}`}
+            style={{
+              position: 'absolute',
+              background: '#7c3aed',
+              zIndex: 100,
+              pointerEvents: 'none',
+              opacity: 0.7,
+              ...(g.axis === 'v'
+                ? { left: g.pos * effectiveZoom, top: 0, width: 1, height: '100%' }
+                : { top: g.pos * effectiveZoom, left: 0, height: 1, width: '100%' }),
+            }}
           />
         ))}
 
