@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import styles from './ExportModal.module.css'
 
 const FORMATS = [
@@ -19,23 +19,32 @@ const RESOLUTIONS = [
  *
  * @param {boolean}  open
  * @param {Function} onClose
+ * @param {Function} onExport
+ * @param {{status: 'idle'|'exporting'|'done'|'error', progress?: number, error?: string|null}} exportState
  */
-export function ExportModal({ open, onClose }) {
+export function ExportModal({
+  open,
+  onClose,
+  onExport,
+  exportState = { status: 'idle', progress: 0, error: null },
+}) {
   const [format, setFormat] = useState('mp4')
   const [resolution, setResolution] = useState('1080p')
-  const [phase, setPhase] = useState('idle') // idle | exporting | done
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') handleClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, handleClose])
 
   if (!open) return null
 
-  function handleExport() {
-    setPhase('exporting')
-    setTimeout(() => setPhase('done'), 1800)
-  }
-
-  function handleClose() {
-    setPhase('idle')
-    onClose()
-  }
+  const phase = exportState.status === 'done' ? 'done' : 'idle'
 
   return (
     <div className={styles.backdrop} onClick={handleClose} aria-modal="true" role="dialog" aria-label="Export project">
@@ -116,16 +125,32 @@ export function ExportModal({ open, onClose }) {
               <span className={styles.watermark}>Made with Motionity &middot; huntermussel.com</span>
               <button
                 className={styles['export-btn']}
-                onClick={handleExport}
-                disabled={phase === 'exporting'}
+                onClick={() => onExport?.({ format, resolution })}
+                disabled={exportState.status === 'exporting'}
               >
-                {phase === 'exporting' ? (
-                  <><span className={styles.spinner} aria-hidden="true" /> Exporting…</>
+                {exportState.status === 'exporting' ? (
+                  <>
+                    <span className={styles.spinner} aria-hidden="true" />
+                    Exporting... {Math.max(0, Math.min(100, exportState.progress ?? 0))}%
+                  </>
                 ) : (
                   `Export ${format.toUpperCase()}`
                 )}
               </button>
             </div>
+            {exportState.status === 'error' && (
+              <p
+                role="alert"
+                style={{
+                  margin: 0,
+                  padding: '0 var(--space-6) var(--space-4)',
+                  color: 'var(--color-danger, #f87171)',
+                  fontSize: 'var(--font-size-xs)',
+                }}
+              >
+                {exportState.error || 'Export failed'}
+              </p>
+            )}
           </>
         )}
       </div>

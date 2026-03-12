@@ -22,6 +22,13 @@ const mockTracks = [
   },
 ]
 
+const selectedObject = {
+  id: 'obj-1',
+  keyframes: {
+    left: [{ t: 1, value: 20 }],
+  },
+}
+
 describe('Timeline', () => {
   it('renders timeline section with aria-label', () => {
     render(<Timeline />)
@@ -55,6 +62,12 @@ describe('Timeline', () => {
   it('renders skip-to-start button', () => {
     render(<Timeline />)
     expect(screen.getByRole('button', { name: /skip to start/i })).toBeInTheDocument()
+  })
+
+  it('renders frame step buttons', () => {
+    render(<Timeline />)
+    expect(screen.getByRole('button', { name: /step one frame backward/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /step one frame forward/i })).toBeInTheDocument()
   })
 
   it('renders skip-to-end button', () => {
@@ -106,5 +119,30 @@ describe('Timeline', () => {
   it('formats single digit time correctly', () => {
     render(<Timeline currentTime={5} duration={10} />)
     expect(screen.getByLabelText(/current time/i)).toHaveTextContent('00:05.00')
+  })
+
+  it('renders keyframe markers for selected lane', () => {
+    render(
+      <Timeline
+        duration={10}
+        selectedObject={selectedObject}
+        selectedPropertyId="left"
+      />
+    )
+    expect(screen.getByLabelText(/keyframe at 1.00 seconds/i)).toBeInTheDocument()
+  })
+
+  it('calls delete selected keyframes action', () => {
+    const handler = vi.fn()
+    render(
+      <Timeline
+        duration={10}
+        selectedObject={selectedObject}
+        selectedPropertyId="left"
+        onDeleteKeyframes={handler}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: /delete selected keyframes/i }))
+    expect(handler).toHaveBeenCalled()
   })
 })

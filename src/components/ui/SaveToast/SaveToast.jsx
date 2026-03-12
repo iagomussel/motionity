@@ -1,6 +1,6 @@
 /**
  * SaveToast — a small status indicator that appears when the project is saved.
- * Sits in the bottom-right corner, above the legacy editor.
+ * Sits in the bottom-right corner, above the controls.
  *
  * @param {'idle'|'saving'|'saved'} status
  */
@@ -16,7 +16,7 @@ export function SaveToast({ status }) {
       aria-label={isSaving ? 'Saving project' : 'Project saved'}
       style={{
         position: 'fixed',
-        bottom: 76,   /* sits above legacy #controls bar (~60px) */
+        bottom: 76,   /* sits above #controls bar (~60px) */
         right: 20,
         zIndex: 9999999,
         display: 'flex',

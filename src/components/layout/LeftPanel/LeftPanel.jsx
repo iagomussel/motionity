@@ -104,11 +104,12 @@ function LayersPanel({ tracks }) {
   )
 }
 
-const PANEL_MAP = {
-  media:  <MediaPanel />,
-  text:   <TextPanel />,
-  shapes: <ShapesPanel />,
-  layers: <LayersPanel tracks={[]} />,
+function getPanelContent(tabId, tracks) {
+  if (tabId === 'media') return <MediaPanel />
+  if (tabId === 'text') return <TextPanel />
+  if (tabId === 'shapes') return <ShapesPanel />
+  if (tabId === 'layers') return <LayersPanel tracks={tracks} />
+  return null
 }
 
 /**
@@ -127,6 +128,7 @@ export function LeftPanel({
   collapsed = false,
   mobileOpen = false,
   children,
+  tracks = [],
 }) {
   const [internalTab, setInternalTab] = useState(tabs[0]?.id)
   const currentTab = activeTab ?? internalTab
@@ -172,7 +174,7 @@ export function LeftPanel({
         role="tabpanel"
         aria-label={tabs.find(t => t.id === currentTab)?.label}
       >
-        {children ?? PANEL_MAP[currentTab] ?? null}
+        {children ?? getPanelContent(currentTab, tracks) ?? null}
       </div>
     </aside>
   )

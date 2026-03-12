@@ -23,11 +23,11 @@ describe('project storage', () => {
 
     saveCurrentProject({
       storage,
-      project: { version: 1, name: 'Untitled', legacyState: { a: 1 } },
+      project: { version: 2, name: 'Untitled', playback: {} },
       now,
     })
 
-    expect(storage.getItem(STORAGE_KEYS.current)).toContain('"version":1')
+    expect(storage.getItem(STORAGE_KEYS.current)).toContain('"version":2')
     const metaRaw = storage.getItem(STORAGE_KEYS.currentMeta)
     expect(metaRaw).toBeTruthy()
     const meta = JSON.parse(metaRaw)
@@ -48,7 +48,7 @@ describe('project storage', () => {
 
   it('loadCurrentProject returns parsed project when valid', () => {
     const storage = makeStorage()
-    const project = { version: 1, name: 'X', legacyState: { hello: 'world' } }
+    const project = { version: 2, name: 'X', playback: { isPlaying: false } }
     storage.setItem(STORAGE_KEYS.current, JSON.stringify(project))
     expect(loadCurrentProject({ storage })).toEqual(project)
   })

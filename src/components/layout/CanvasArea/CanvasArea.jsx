@@ -32,6 +32,9 @@ export function CanvasArea({
   onToolChange,
   canvasRef,
   children,
+  renderObjects = [],
+  selectedObjectId = null,
+  onSelectObject,
 }) {
   const containerRef = useRef(null)
   const [fitZoom, setFitZoom] = useState(1)
@@ -87,6 +90,47 @@ export function CanvasArea({
         }}
         aria-label={`Canvas ${canvasWidth}×${canvasHeight}`}
       >
+        {renderObjects.map((object) => {
+          const value = object.resolved
+          const left = Number(value.left) || 0
+          const top = Number(value.top) || 0
+          const width = Math.max(1, Number(value.width) || 1) * (Number(value.scaleX) || 1)
+          const height = Math.max(1, Number(value.height) || 1) * (Number(value.scaleY) || 1)
+          const opacity = Math.max(0, Math.min(1, Number(value.opacity) || 0))
+          const isSelected = selectedObjectId === object.id
+          return (
+            <button
+              key={object.id}
+              type="button"
+              onClick={() => onSelectObject?.(object.id)}
+              style={{
+                position: 'absolute',
+                left: `${left * effectiveZoom}px`,
+                top: `${top * effectiveZoom}px`,
+                width: `${width * effectiveZoom}px`,
+                height: `${height * effectiveZoom}px`,
+                transform: `rotate(${Number(value.angle) || 0}deg)`,
+                transformOrigin: 'center center',
+                borderRadius: `${Math.max(Number(value.rx) || 0, Number(value.ry) || 0) * effectiveZoom}px`,
+                border: `${Math.max(0, Number(value.strokeWidth) || 0)}px solid ${value.stroke || '#ffffff'}`,
+                background: value.fill || 'transparent',
+                opacity,
+                boxShadow: `0 ${(Number(value['shadow.offsetY']) || 0) * effectiveZoom}px ${(Number(value['shadow.blur']) || 0) * effectiveZoom}px rgba(0,0,0,${Math.max(0, Math.min(1, Number(value['shadow.opacity']) || 0))})`,
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: `${12 * effectiveZoom}px`,
+                cursor: 'pointer',
+                outline: isSelected ? '2px solid #a78bfa' : 'none',
+                zIndex: isSelected ? 5 : 2,
+              }}
+              aria-label={`Canvas object ${object.name}`}
+            >
+              {object.type === 'text' ? object.textContent : object.name}
+            </button>
+          )
+        })}
         {children ?? (
           <div className={styles['canvas-empty']} aria-hidden="true">
             <svg className={styles['canvas-empty-icon']} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
